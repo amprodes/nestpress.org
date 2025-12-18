@@ -1,0 +1,51 @@
+{
+  "name": "enfold-business-flat",
+  "version": 3,
+  "title": "Enfold Flat Business Demo – Just another Kriesi.at Theme Demos Sites siteClick to open the search input fieldPreviousNextScroll to top",
+  "description": "AI-generated theme cloned from https://kriesi.at/themes/enfold-business-flat",
+  "author": "AI Theme Factory",
+  "requires": "1.0.0",
+  "created": "2025-12-18T14:34:38.736Z",
+  "files": [
+    "README.md",
+    "index.tsx",
+    "parts/Footer.tsx",
+    "parts/Header.tsx",
+    "parts/PostMeta.tsx",
+    "parts/Sidebar.tsx",
+    "patterns/CTA.tsx",
+    "patterns/FeatureGrid.tsx",
+    "patterns/HeroBanner.tsx",
+    "patterns/PostsGrid.tsx",
+    "templates/404.tsx",
+    "templates/archive.tsx",
+    "templates/category.tsx",
+    "templates/index.tsx",
+    "templates/page-with-sidebar.tsx",
+    "templates/page.tsx",
+    "templates/single.tsx",
+    "theme.json"
+  ],
+  "fileCount": 18,
+  "templates": [
+    "404.tsx",
+    "archive.tsx",
+    "category.tsx",
+    "index.tsx",
+    "page-with-sidebar.tsx",
+    "page.tsx",
+    "single.tsx"
+  ],
+  "parts": [
+    "Footer.tsx",
+    "Header.tsx",
+    "PostMeta.tsx",
+    "Sidebar.tsx"
+  ],
+  "patterns": [
+    "CTA.tsx",
+    "FeatureGrid.tsx",
+    "HeroBanner.tsx",
+    "PostsGrid.tsx"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "errorPatterns": {
+    "2427_template": {
+      "errorCode": 2427,
+      "errorMessage": "Interface name cannot be '404'.",
+      "fileType": "template",
+      "occurrences": 2,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1005_template": {
+      "errorCode": 1005,
+      "errorMessage": "';' expected.",
+      "fileType": "template",
+      "occurrences": 10,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1351_template": {
+      "errorCode": 1351,
+      "errorMessage": "An identifier or keyword cannot immediately follow a numeric literal.",
+      "fileType": "template",
+      "occurrences": 6,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1109_template": {
+      "errorCode": 1109,
+      "errorMessage": "Expression expected.",
+      "fileType": "template",
+      "occurrences": 10,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1011_template": {
+      "errorCode": 1011,
+      "errorMessage": "An element access expression should take an argument.",
+      "fileType": "template",
+      "occurrences": 4,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "2304_template": {
+      "errorCode": 2304,
+      "errorMessage": "Cannot find name 'interface'.",
+      "fileType": "template",
+      "occurrences": 18,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1361_template": {
+      "errorCode": 1361,
+      "errorMessage": "'Post' cannot be used as a value because it was imported using 'import type'.",
+      "fileType": "template",
+      "occurrences": 10,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "18004_template": {
+      "errorCode": 18004,
+      "errorMessage": "No value exists in scope for the shorthand property 'post'. Either declare one or provide an initializer.",
+      "fileType": "template",
+      "occurrences": 6,
+      "lastSeen": "2025-12-18T17:02:07.775Z",
+      "commonFix": "import * as React from 'react';\nimport type { Post, Menu, Widget, SiteSettings } from '@/types';\n\ninterface NotFoundProps {\n  posts?: Post[];\n  post?: Post;\n  primaryMenu?: Menu;\n  sidebarWidgets?: Wi"
+    },
+    "1005_part": {
+      "errorCode": 1005,
+      "errorMessage": "',' expected.",
+      "fileType": "part",
+      "occurrences": 4,
+      "lastSeen": "2025-12-18T17:20:11.858Z",
+      "commonFix": "import * as React from 'react';\nimport type { Widget, Post } from '@/types';\n\ninterface SidebarProps {\n  widgets?: Widget[];\n  recentPosts?: Post[];\n}\n\nexport function Sidebar({ widgets = [], recentPo"
+    }
+  },
+  "fixPatterns": [],
+  "lastUpdated": "2025-12-18T17:20:11.858Z"
+}

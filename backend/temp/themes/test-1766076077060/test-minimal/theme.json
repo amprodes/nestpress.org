@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "title": "Test Theme",
+  "slug": "test-minimal",
+  "author": "AI Theme Factory",
+  "description": "AI-generated theme cloned from test://minimal",
+  "requires": "1.0.0",
+  "settings": {
+    "color": {
+      "palette": [
+        {
+          "slug": "primary",
+          "color": "#000000",
+          "name": "Primary"
+        },
+        {
+          "slug": "secondary",
+          "color": "#666666",
+          "name": "Secondary"
+        },
+        {
+          "slug": "accent",
+          "color": "#0066cc",
+          "name": "Accent"
+        },
+        {
+          "slug": "text",
+          "color": "#000000",
+          "name": "Text"
+        },
+        {
+          "slug": "background",
+          "color": "#ffffff",
+          "name": "Background"
+        }
+      ]
+    },
+    "typography": {
+      "fontFamilies": [
+        {
+          "slug": "heading",
+          "fontFamily": "Arial, sans-serif",
+          "name": "Heading"
+        },
+        {
+          "slug": "body",
+          "fontFamily": "Arial, sans-serif",
+          "name": "Body"
+        }
+      ]
+    },
+    "layout": {
+      "contentSize": "800px",
+      "wideSize": "1200px"
+    }
+  },
+  "styles": {
+    "color": {
+      "text": "#000000",
+      "background": "#ffffff"
+    },
+    "typography": {
+      "fontFamily": "Arial, sans-serif",
+      "fontSize": "16px"
+    }
+  },
+  "templateParts": [
+    {
+      "name": "header",
+      "title": "Header",
+      "area": "header"
+    },
+    {
+      "name": "footer",
+      "title": "Footer",
+      "area": "footer"
+    },
+    {
+      "name": "sidebar",
+      "title": "Sidebar",
+      "area": "sidebar"
+    }
+  ],
+  "customTemplates": [
+    {
+      "name": "page-with-sidebar",
+      "title": "Page with Sidebar",
+      "postTypes": [
+        "page"
+      ]
+    }
+  ]
+}

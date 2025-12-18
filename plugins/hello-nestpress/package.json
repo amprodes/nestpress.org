@@ -1,0 +1,8 @@
+{
+  "name": "hello-nestpress",
+  "version": "1.0.0",
+  "description": "A simple example plugin demonstrating the NestPress plugin API",
+  "main": "index.ts",
+  "author": "NestPress Team",
+  "license": "GPL-2.0+"
+}

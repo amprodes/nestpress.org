@@ -1,0 +1,62 @@
+{
+  "id": "startit",
+  "name": "StartIt Product",
+  "slug": "startit",
+  "version": "1.0.0",
+  "description": "Modern SaaS and product landing page theme with clean design, animated sections, and conversion-focused layouts. Perfect for startups and digital products.",
+  "author": "NestPress Team",
+  "authorUri": "https://nestpress.dev",
+  "license": "GPL-2.0-or-later",
+  "thumbnail": "/themes/startit/screenshot.svg",
+  "tags": ["saas", "startup", "product", "landing", "modern", "gradient", "tech"],
+  "requires": "1.0.0",
+  "features": {
+    "customLogo": true,
+    "customHeader": true,
+    "customBackground": true,
+    "customColors": true,
+    "customFonts": true,
+    "pricingTables": true,
+    "testimonialSlider": true,
+    "featureShowcase": true,
+    "ctaSections": true,
+    "animations": true
+  },
+  "settings": {
+    "colors": {
+      "primary": "#6366f1",
+      "secondary": "#8b5cf6",
+      "accent": "#06b6d4",
+      "background": "#ffffff",
+      "surface": "#f8fafc",
+      "dark": "#0f172a",
+      "text": "#1e293b",
+      "textMuted": "#64748b",
+      "border": "#e2e8f0"
+    },
+    "fonts": {
+      "heading": "Plus Jakarta Sans, sans-serif",
+      "body": "Inter, sans-serif",
+      "accent": "JetBrains Mono, monospace"
+    },
+    "layout": {
+      "containerWidth": "1280px",
+      "sidebarPosition": "none",
+      "headerStyle": "sticky",
+      "footerStyle": "modern"
+    }
+  },
+  "templateParts": {
+    "header": "index.tsx",
+    "footer": "index.tsx"
+  },
+  "templates": [
+    "index",
+    "single",
+    "page",
+    "archive",
+    "category",
+    "search",
+    "404"
+  ]
+}

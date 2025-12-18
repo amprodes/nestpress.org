@@ -1,0 +1,22 @@
+{
+  "name": "nestpress-contact-form",
+  "version": "1.0.0",
+  "description": "Easy-to-use contact form builder with spam protection, email notifications, and form submissions management.",
+  "main": "index.ts",
+  "keywords": [
+    "nestpress",
+    "plugin",
+    "contact-form",
+    "forms",
+    "email"
+  ],
+  "author": "NestPress Team",
+  "license": "GPL-2.0+",
+  "nestpress": {
+    "minVersion": "1.0.0",
+    "textDomain": "contact-form"
+  },
+  "peerDependencies": {
+    "@nestpress/core": "^1.0.0"
+  }
+}

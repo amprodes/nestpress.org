@@ -1,0 +1,52 @@
+{
+  "name": "Business Pro",
+  "slug": "business-pro",
+  "version": "1.0.0",
+  "author": "NestPress Team",
+  "description": "Professional business theme with modern corporate design, perfect for agencies, consultancies, and enterprises",
+  "thumbnail": "/themes/business-pro/screenshot.svg",
+  "features": [
+    "Responsive Design",
+    "Corporate Layout",
+    "Service Sections",
+    "Team Members",
+    "Testimonials",
+    "Call-to-Action Blocks",
+    "Statistics Counter",
+    "Contact Forms"
+  ],
+  "templates": [
+    "index",
+    "single",
+    "page",
+    "archive",
+    "category",
+    "search",
+    "404"
+  ],
+  "settings": {
+    "colors": {
+      "primary": "#1e3a5f",
+      "secondary": "#f4a261",
+      "accent": "#2ec4b6",
+      "background": "#ffffff",
+      "surface": "#f8f9fa",
+      "text": "#1a1a2e",
+      "textSecondary": "#6c757d"
+    },
+    "fonts": {
+      "heading": "Poppins, sans-serif",
+      "body": "Open Sans, sans-serif"
+    },
+    "layout": {
+      "headerStyle": "fixed",
+      "sidebarPosition": "none",
+      "footerStyle": "full",
+      "containerWidth": "wide"
+    }
+  },
+  "requires": {
+    "nestpress": ">=1.0.0",
+    "react": ">=19.0.0"
+  }
+}

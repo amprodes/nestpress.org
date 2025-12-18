@@ -1,0 +1,52 @@
+{
+  "name": "MediCare",
+  "slug": "medicare",
+  "version": "1.0.0",
+  "author": "NestPress Team",
+  "description": "Clean and professional medical/healthcare theme perfect for clinics, hospitals, doctors, and wellness centers",
+  "thumbnail": "/themes/medicare/screenshot.svg",
+  "features": [
+    "Responsive Design",
+    "Healthcare Layout",
+    "Appointment Booking",
+    "Doctor Profiles",
+    "Services Showcase",
+    "Testimonials",
+    "Emergency Contact",
+    "Department Listings"
+  ],
+  "templates": [
+    "index",
+    "single",
+    "page",
+    "archive",
+    "category",
+    "search",
+    "404"
+  ],
+  "settings": {
+    "colors": {
+      "primary": "#00a8e8",
+      "secondary": "#007ea7",
+      "accent": "#00d4aa",
+      "background": "#ffffff",
+      "surface": "#f0f9ff",
+      "text": "#1a1a2e",
+      "textSecondary": "#5a6a7a"
+    },
+    "fonts": {
+      "heading": "Nunito, sans-serif",
+      "body": "Open Sans, sans-serif"
+    },
+    "layout": {
+      "headerStyle": "fixed",
+      "sidebarPosition": "none",
+      "footerStyle": "full",
+      "containerWidth": "wide"
+    }
+  },
+  "requires": {
+    "nestpress": ">=1.0.0",
+    "react": ">=19.0.0"
+  }
+}

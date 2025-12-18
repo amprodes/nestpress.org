@@ -1,0 +1,61 @@
+{
+  "id": "creative",
+  "name": "Creative Agency",
+  "slug": "creative",
+  "version": "1.0.0",
+  "description": "Bold, artistic theme perfect for creative agencies, design studios, and portfolio showcases. Features dynamic animations and striking visual layouts.",
+  "author": "NestPress Team",
+  "authorUri": "https://nestpress.dev",
+  "license": "GPL-2.0-or-later",
+  "thumbnail": "/themes/creative/screenshot.svg",
+  "tags": ["creative", "agency", "portfolio", "design", "modern", "dark", "animated"],
+  "requires": "1.0.0",
+  "features": {
+    "customLogo": true,
+    "customHeader": true,
+    "customBackground": true,
+    "customColors": true,
+    "customFonts": true,
+    "portfolioSupport": true,
+    "darkMode": true,
+    "parallaxSections": true,
+    "videoBackground": true,
+    "animations": true
+  },
+  "settings": {
+    "colors": {
+      "primary": "#ff6b35",
+      "secondary": "#1a1a2e",
+      "accent": "#f7c948",
+      "background": "#0f0f1a",
+      "surface": "#1a1a2e",
+      "text": "#ffffff",
+      "textMuted": "#a0a0b0",
+      "border": "#2a2a3e"
+    },
+    "fonts": {
+      "heading": "Space Grotesk, sans-serif",
+      "body": "Inter, sans-serif",
+      "accent": "Playfair Display, serif"
+    },
+    "layout": {
+      "containerWidth": "1400px",
+      "sidebarPosition": "none",
+      "headerStyle": "transparent",
+      "footerStyle": "dark"
+    }
+  },
+  "templateParts": {
+    "header": "index.tsx",
+    "footer": "index.tsx"
+  },
+  "templates": [
+    "index",
+    "single",
+    "page",
+    "archive",
+    "category",
+    "search",
+    "404"
+  ]
+}

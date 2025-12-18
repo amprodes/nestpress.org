@@ -1,0 +1,51 @@
+/* Custom Button Styles */
+
+.button-outline {
+  background: transparent;
+  border: 2px solid currentColor;
+  color: inherit;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-outline:hover {
+  background: currentColor;
+  color: var(--wp--preset--color--base, #ffffff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.button-solid {
+  background: var(--wp--preset--color--accent-1, #2563eb);
+  border: none;
+  color: var(--wp--preset--color--base, #ffffff);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-solid:hover {
+  background: var(--wp--preset--color--accent-3, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.button-ghost {
+  background: transparent;
+  border: none;
+  color: var(--wp--preset--color--accent-1, #2563eb);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.button-ghost:hover {
+  background: var(--wp--preset--color--accent-1, #2563eb);
+  color: var(--wp--preset--color--base, #ffffff);
+}
