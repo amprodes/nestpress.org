@@ -67,9 +67,11 @@ export async function handleGenerateTheme(url: string, themeName: string, jobId:
     // Phase 2: Clone resources (30-50%)
     api.log(`Phase 2/5: Cloning resources (CSS, images, fonts)...`);
     api.sendProgress?.(30, 'Downloading website assets...', { type: 'phase', phase: 2 });
+    api.log(`[DEBUG] htmlSnippets available: ${!!blueprint.htmlSnippets}, homepage length: ${blueprint.htmlSnippets?.homepage?.length || 0}`);
     const cloner = new ResourceCloner(api, tempDir);
-    const clonedAssets = await cloner.clone(blueprint.resources, themeName);
+    const clonedAssets = await cloner.clone(blueprint.resources, themeName, blueprint.htmlSnippets);
     api.log(`✓ Resources cloned: ${clonedAssets.stylesheets?.length || 0} CSS, ${clonedAssets.images?.length || 0} images`);
+    api.log(`✓ Original HTML preserved for design fidelity`);
     api.sendProgress?.(50, 'Assets downloaded successfully', { type: 'phase', phase: 2 });
 
     // Phase 3: Assemble theme structure (50-70%)

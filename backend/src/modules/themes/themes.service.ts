@@ -200,6 +200,52 @@ export class ThemesService implements OnModuleInit {
   }
 
   /**
+   * Set active theme and persist to database
+   */
+  async setActive(themeId: string): Promise<InstalledTheme> {
+    const theme = this.installedThemes.find(t => t.id === themeId);
+    if (!theme) {
+      throw new NotFoundException(`Theme not found: ${themeId}`);
+    }
+
+    // Update active theme ID
+    this.activeThemeId = themeId;
+
+    // Update all themes' isActive flag
+    this.installedThemes.forEach(t => {
+      t.isActive = t.id === themeId;
+    });
+
+    // Persist to database
+    try {
+      await this.database.update(
+        SETTINGS_COLLECTION,
+        'theme-settings',
+        { activeThemeId: themeId, updatedAt: new Date().toISOString() },
+      );
+      this.logger.log(`Active theme set to: ${themeId}`);
+    } catch (error) {
+      // If doesn't exist, create it
+      await this.database.create(SETTINGS_COLLECTION, {
+        id: 'theme-settings',
+        activeThemeId: themeId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      this.logger.log(`Created theme settings with active theme: ${themeId}`);
+    }
+
+    return theme;
+  }
+
+  /**
+   * Get currently active theme
+   */
+  async getActive(): Promise<InstalledTheme | null> {
+    return this.installedThemes.find(t => t.isActive) || this.installedThemes[0] || null;
+  }
+
+  /**
    * Get the currently active theme
    */
   async getActiveTheme(): Promise<InstalledTheme | null> {

@@ -40,6 +40,10 @@ export interface ThemeMetadata {
 export interface LoadedTheme {
   metadata: ThemeMetadata;
   templates: Record<string, ComponentType<any>>;
+  assets?: {
+    css?: string[];
+    js?: string[];
+  };
 }
 
 class ThemeLoader {
@@ -111,12 +115,16 @@ class ThemeLoader {
       const loadedTheme: LoadedTheme = {
         metadata,
         templates,
+        assets: (metadata as any).assets, // Extract assets from theme.json
       };
 
       // Cache the loaded theme
       this.loadedThemes.set(slug, loadedTheme);
 
-      console.log(`✅ Theme loaded: ${metadata.name} v${metadata.version}`);
+      console.log(`✅ Theme loaded: ${metadata.name} v${metadata.version}`, {
+        hasAssets: !!(metadata as any).assets,
+        cssFiles: (metadata as any).assets?.css
+      });
       return loadedTheme;
     } catch (error) {
       console.error(`❌ Failed to load theme "${slug}":`, error);

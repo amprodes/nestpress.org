@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+downloads
+public
+temp
+tmp
+.cache
+.env.*
+.env

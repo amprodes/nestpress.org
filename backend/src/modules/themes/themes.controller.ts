@@ -19,8 +19,8 @@ export class ThemesController {
   @Public()
   @Get('active')
   @ApiOperation({ summary: 'Get currently active theme' })
-  getActive() {
-    return this.themesService.getActiveTheme();
+  async getActive() {
+    return await this.themesService.getActive();
   }
 
   @Public()

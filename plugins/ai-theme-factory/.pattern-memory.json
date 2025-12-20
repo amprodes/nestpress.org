@@ -68,11 +68,11 @@
       "errorCode": 1005,
       "errorMessage": "',' expected.",
       "fileType": "part",
-      "occurrences": 4,
-      "lastSeen": "2025-12-18T17:20:11.858Z",
+      "occurrences": 52,
+      "lastSeen": "2025-12-20T15:27:23.508Z",
       "commonFix": "import * as React from 'react';\nimport type { Widget, Post } from '@/types';\n\ninterface SidebarProps {\n  widgets?: Widget[];\n  recentPosts?: Post[];\n}\n\nexport function Sidebar({ widgets = [], recentPo"
     }
   },
   "fixPatterns": [],
-  "lastUpdated": "2025-12-18T17:20:11.858Z"
+  "lastUpdated": "2025-12-20T15:27:23.508Z"
 }

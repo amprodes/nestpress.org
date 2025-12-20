@@ -11,12 +11,20 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import sharp from 'sharp';
+import { CSSConsolidator } from './CSSConsolidator';
 
 export interface ClonedResources {
   stylesheets: Array<{ originalUrl: string; localPath: string; content: string }>;
   images: Array<{ originalUrl: string; localPath: string; size: number }>;
   fonts: Array<{ originalUrl: string; localPath: string }>;
   scripts: Array<{ originalUrl: string; localPath: string }>;
+  htmlSnippets?: {
+    header: string;
+    footer: string;
+    sidebar?: string;
+    homepage: string;
+    templates: Record<string, string>;
+  };
 }
 
 export class ResourceCloner {
@@ -28,8 +36,12 @@ export class ResourceCloner {
     this.tempDir = tempDir;
   }
 
-  async clone(resources: any, themeName: string): Promise<ClonedResources> {
+  async clone(resources: any, themeName: string, htmlSnippets?: any): Promise<ClonedResources> {
     this.api.log(`[ResourceCloner] Cloning resources for: ${themeName}`);
+    this.api.log(`[ResourceCloner] htmlSnippets received: ${htmlSnippets ? 'YES' : 'NO'}`);
+    if (htmlSnippets) {
+      this.api.log(`[ResourceCloner] htmlSnippets keys: ${Object.keys(htmlSnippets).join(', ')}`);
+    }
 
     const assetsDir = path.join(this.tempDir, 'assets');
     fs.mkdirSync(assetsDir, { recursive: true });
@@ -37,24 +49,74 @@ export class ResourceCloner {
     fs.mkdirSync(path.join(assetsDir, 'images'), { recursive: true });
     fs.mkdirSync(path.join(assetsDir, 'fonts'), { recursive: true });
     fs.mkdirSync(path.join(assetsDir, 'js'), { recursive: true });
+    
+    // Save original HTML snippets if provided
+    if (htmlSnippets) {
+      const originalHtmlDir = path.join(this.tempDir, 'original-html');
+      fs.mkdirSync(originalHtmlDir, { recursive: true });
+      
+      this.api.log('[ResourceCloner] Saving original HTML snippets...');
+      this.api.log(`[ResourceCloner] Homepage HTML length: ${htmlSnippets.homepage?.length || 0} chars`);
+      
+      // Save homepage HTML
+      if (htmlSnippets.homepage) {
+        fs.writeFileSync(path.join(originalHtmlDir, 'index.html'), htmlSnippets.homepage);
+        this.api.log('  ✓ Saved homepage HTML');
+      }
+      
+      // Save header HTML
+      if (htmlSnippets.header) {
+        fs.writeFileSync(path.join(originalHtmlDir, 'header.html'), htmlSnippets.header);
+      }
+      
+      // Save footer HTML
+      if (htmlSnippets.footer) {
+        fs.writeFileSync(path.join(originalHtmlDir, 'footer.html'), htmlSnippets.footer);
+      }
+      
+      // Save sidebar HTML if exists
+      if (htmlSnippets.sidebar) {
+        fs.writeFileSync(path.join(originalHtmlDir, 'sidebar.html'), htmlSnippets.sidebar);
+      }
+      
+      // Save template-specific HTML
+      if (htmlSnippets.templates) {
+        Object.entries(htmlSnippets.templates).forEach(([name, html]) => {
+          fs.writeFileSync(path.join(originalHtmlDir, `${name}.html`), html as string);
+        });
+      }
+      
+      this.api.log(`✓ Original HTML preserved in: ${originalHtmlDir}`);
+    }
 
     this.api.sendProgress?.(31, `Downloading ${resources.stylesheets.length} stylesheets...`, { type: 'phase', phase: 2 });
     const stylesheets = await this.cloneStylesheets(resources.stylesheets, assetsDir);
     this.api.sendProgress?.(33, `${stylesheets.length} stylesheets downloaded`, { type: 'phase', phase: 2 });
 
-    this.api.sendProgress?.(35, `Optimizing ${resources.images.length} images...`, { type: 'phase', phase: 2 });
-    const images = await this.cloneImages(resources.images, assetsDir);
-    this.api.sendProgress?.(37, `${images.length} images optimized`, { type: 'phase', phase: 2 });
+    // Keep CSS as-is without consolidation (preserves original styling exactly)
+    this.api.sendProgress?.(34, 'Organizing CSS files...', { type: 'phase', phase: 2 });
+    this.api.log('✓ CSS files preserved as-is (no consolidation)');
+    this.api.sendProgress?.(35, `${stylesheets.length} CSS files ready`, { type: 'phase', phase: 2 });
 
-    this.api.sendProgress?.(38, `Downloading ${resources.fonts.length} fonts...`, { type: 'phase', phase: 2 });
+    this.api.sendProgress?.(36, `Optimizing ${resources.images.length} images...`, { type: 'phase', phase: 2 });
+    const images = await this.cloneImages(resources.images, assetsDir);
+    this.api.sendProgress?.(38, `${images.length} images optimized`, { type: 'phase', phase: 2 });
+
+    this.api.sendProgress?.(39, `Downloading ${resources.fonts.length} fonts...`, { type: 'phase', phase: 2 });
     const fonts = await this.cloneFonts(resources.fonts, assetsDir);
-    this.api.sendProgress?.(39, `${fonts.length} fonts downloaded`, { type: 'phase', phase: 2 });
+    this.api.sendProgress?.(40, `${fonts.length} fonts downloaded`, { type: 'phase', phase: 2 });
 
     const scripts = await this.cloneScripts(resources.scripts, assetsDir);
 
     this.api.log(`✓ Resources cloned: ${stylesheets.length} CSS, ${images.length} images, ${fonts.length} fonts`);
 
-    return { stylesheets, images, fonts, scripts };
+    return { 
+      stylesheets, 
+      images, 
+      fonts, 
+      scripts,
+      htmlSnippets 
+    };
   }
 
   private async cloneStylesheets(urls: string[], assetsDir: string): Promise<any[]> {

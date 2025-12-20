@@ -344,8 +344,73 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       route: window.location.pathname,
     });
 
-    // Load plugin styles in <head> (WordPress wp_enqueue_style)
+    // Load theme CSS files from theme.json assets
     const styleElements: HTMLLinkElement[] = [];
+    console.log('[WebsiteFrontend] Theme CSS loading:', {
+      themeId: effectiveThemeId,
+      hasLoadedTheme: !!loadedTheme,
+      hasAssets: !!loadedTheme?.assets,
+      hasCss: !!loadedTheme?.assets?.css,
+      cssFiles: loadedTheme?.assets?.css
+    });
+    
+    if (loadedTheme?.assets?.css) {
+      loadedTheme.assets.css.forEach((cssPath: string) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `/themes/${effectiveThemeId}/${cssPath}`;
+        link.id = `theme-css-${cssPath.replace(/[^a-z0-9]/gi, '-')}`;
+        document.head.appendChild(link);
+        styleElements.push(link);
+        console.log(`✓ Loaded theme CSS: ${link.href}`);
+      });
+    } else {
+      console.warn('[WebsiteFrontend] ⚠ No theme CSS files found in theme.json assets');
+    }
+
+    // Load theme JS files from theme.json assets
+    const themeScriptElements: HTMLScriptElement[] = [];
+    console.log('[WebsiteFrontend] Theme JS loading:', {
+      themeId: effectiveThemeId,
+      hasJs: !!loadedTheme?.assets?.js,
+      jsFiles: loadedTheme?.assets?.js
+    });
+    
+    if (loadedTheme?.assets?.js) {
+      // Sort scripts to load libraries (jQuery, etc.) first
+      const sortedScripts = [...loadedTheme.assets.js].sort((a, b) => {
+        const aIsLibrary = /jquery|lodash|underscore|backbone|modernizr/i.test(a);
+        const bIsLibrary = /jquery|lodash|underscore|backbone|modernizr/i.test(b);
+        
+        // Libraries load first
+        if (aIsLibrary && !bIsLibrary) return -1;
+        if (!aIsLibrary && bIsLibrary) return 1;
+        
+        // Then alphabetical
+        return a.localeCompare(b);
+      });
+      
+      sortedScripts.forEach((jsPath: string, index: number) => {
+        const script = document.createElement('script');
+        script.src = `/themes/${effectiveThemeId}/${jsPath}`;
+        script.id = `theme-js-${jsPath.replace(/[^a-z0-9]/gi, '-')}`;
+        
+        // Libraries load synchronously (no defer/async)
+        // Other scripts use defer to maintain order but not block parsing
+        const isLibrary = /jquery|lodash|underscore|backbone|modernizr/i.test(jsPath);
+        if (!isLibrary) {
+          script.defer = true;
+        }
+        
+        document.body.appendChild(script);
+        themeScriptElements.push(script);
+        console.log(`✓ Loaded theme JS (${isLibrary ? 'sync' : 'defer'}): ${script.src}`);
+      });
+    } else {
+      console.log('[WebsiteFrontend] ℹ No theme JS files found in theme.json assets');
+    }
+
+    // Load plugin styles in <head> (WordPress wp_enqueue_style)
     pluginAssets.styles.forEach((style: any) => {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
@@ -374,9 +439,10 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     // Cleanup on unmount or when assets change
     return () => {
       styleElements.forEach(el => el.remove());
+      themeScriptElements.forEach(el => el.remove());
       scriptElements.forEach(el => el.remove());
     };
-  }, [pluginAssets, doAction, effectiveThemeId, currentPage]);
+  }, [pluginAssets, doAction, effectiveThemeId, currentPage, loadedTheme]);
 
   // WordPress-like wp_footer hook - run footer actions before </body>
   useEffect(() => {

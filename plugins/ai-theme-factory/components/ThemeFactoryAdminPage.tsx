@@ -26,6 +26,7 @@ interface GenerationState {
 
 export default function ThemeFactoryAdminPage() {
   const [url, setUrl] = useState('');
+  const [generationMode, setGenerationMode] = useState<'exact' | 'nestpress'>('nestpress');
   const [state, setState] = useState<GenerationState>({
     isGenerating: false,
     progress: 0,
@@ -57,7 +58,10 @@ export default function ThemeFactoryAdminPage() {
       const response = await fetch(`${API_BASE_URL}/plugins/ai-theme-factory/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ 
+          url,
+          exactClone: generationMode === 'exact'
+        }),
       });
 
       const data = await response.json();
@@ -131,13 +135,20 @@ export default function ThemeFactoryAdminPage() {
     }
   };
 
-  const phases = [
-    { num: 1, label: 'Analysis', range: '10-30%' },
-    { num: 2, label: 'Resources', range: '30-50%' },
-    { num: 3, label: 'Assembly', range: '50-70%' },
-    { num: 4, label: 'AI Transform', range: '70-88%' },
-    { num: 5, label: 'Package', range: '89-100%' },
-  ];
+  const phases = generationMode === 'exact'
+    ? [
+        { num: 1, label: 'Analysis', range: '10-30%' },
+        { num: 2, label: 'Resources', range: '30-60%' },
+        { num: 3, label: 'Assembly', range: '60-80%' },
+        { num: 4, label: 'Package', range: '80-100%' },
+      ]
+    : [
+        { num: 1, label: 'Analysis', range: '10-30%' },
+        { num: 2, label: 'Resources', range: '30-50%' },
+        { num: 3, label: 'Assembly', range: '50-70%' },
+        { num: 4, label: 'AI Transform', range: '70-88%' },
+        { num: 5, label: 'Package', range: '89-100%' },
+      ];
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -152,7 +163,7 @@ export default function ThemeFactoryAdminPage() {
       {/* Input Form */}
       <div className="bg-white rounded-lg border border-gray-300 shadow-sm p-6 mb-6">
         <label className="block mb-2 font-medium">Target Website URL</label>
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-4">
           <div className="flex-1 relative">
             <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
@@ -178,6 +189,60 @@ export default function ThemeFactoryAdminPage() {
               'Generate Theme'
             )}
           </button>
+        </div>
+
+        {/* Generation Mode Toggle */}
+        <div className="border-t border-gray-200 pt-4">
+          <label className="block mb-3 font-medium text-gray-700">Generation Mode</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setGenerationMode('exact')}
+              disabled={state.isGenerating}
+              className={`p-4 rounded-lg border-2 transition-all text-left ${
+                generationMode === 'exact'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 bg-white hover:border-gray-400'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  generationMode === 'exact' ? 'border-blue-500' : 'border-gray-400'
+                }`}>
+                  {generationMode === 'exact' && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  )}
+                </div>
+                <span className="font-semibold text-gray-900">📸 Exact Clone</span>
+              </div>
+              <p className="text-sm text-gray-600 leading-tight">
+                100% identical copy of original HTML/CSS without any modifications. Best for testing design accuracy.
+              </p>
+            </button>
+
+            <button
+              onClick={() => setGenerationMode('nestpress')}
+              disabled={state.isGenerating}
+              className={`p-4 rounded-lg border-2 transition-all text-left ${
+                generationMode === 'nestpress'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 bg-white hover:border-gray-400'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  generationMode === 'nestpress' ? 'border-blue-500' : 'border-gray-400'
+                }`}>
+                  {generationMode === 'nestpress' && (
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  )}
+                </div>
+                <span className="font-semibold text-gray-900">🔄 NestPressify</span>
+              </div>
+              <p className="text-sm text-gray-600 leading-tight">
+                AI-powered conversion to React components with dynamic content, menus, and widgets. Full CMS integration.
+              </p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -275,27 +340,55 @@ export default function ThemeFactoryAdminPage() {
 
       {/* Info Cards */}
       <div className="grid grid-cols-2 gap-4 mt-8">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-bold text-blue-900 mb-2">What Gets Generated</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>✓ Complete theme structure</li>
-            <li>✓ 7 core templates (home, single, page, archive, etc.)</li>
-            <li>✓ Template parts (header, footer, sidebar)</li>
-            <li>✓ Design system from original site</li>
-            <li>✓ Optimized images and assets</li>
-          </ul>
-        </div>
+        {generationMode === 'exact' ? (
+          <>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-bold text-blue-900 mb-2">📸 Exact Clone Mode</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>✓ 100% identical HTML/CSS copy</li>
+                <li>✓ No AI conversion or modifications</li>
+                <li>✓ All images and assets preserved</li>
+                <li>✓ Original JavaScript included</li>
+                <li>✓ Fast generation (no AI processing)</li>
+              </ul>
+            </div>
 
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <h3 className="font-bold text-purple-900 mb-2">AI-Powered Features</h3>
-          <ul className="text-sm text-purple-800 space-y-1">
-            <li>✓ Layout analysis with Gemini Vision</li>
-            <li>✓ Static HTML → Dynamic React components</li>
-            <li>✓ Automatic menu integration</li>
-            <li>✓ Widget area detection</li>
-            <li>✓ WordPress v3 theme.json</li>
-          </ul>
-        </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <h3 className="font-bold text-amber-900 mb-2">⚠️ Limitations</h3>
+              <ul className="text-sm text-amber-800 space-y-1">
+                <li>✗ No dynamic content from CMS</li>
+                <li>✗ No menu integration</li>
+                <li>✗ No widget areas</li>
+                <li>✗ Static only (no blog, products)</li>
+                <li>→ Use for design testing, then NestPressify</li>
+              </ul>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="font-bold text-blue-900 mb-2">What Gets Generated</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>✓ Complete theme structure</li>
+                <li>✓ 7 core templates (home, single, page, archive, etc.)</li>
+                <li>✓ Template parts (header, footer, sidebar)</li>
+                <li>✓ Design system from original site</li>
+                <li>✓ Optimized images and assets</li>
+              </ul>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <h3 className="font-bold text-purple-900 mb-2">AI-Powered Features</h3>
+              <ul className="text-sm text-purple-800 space-y-1">
+                <li>✓ Layout analysis with Gemini Vision</li>
+                <li>✓ Static HTML → Dynamic React components</li>
+                <li>✓ Automatic menu integration</li>
+                <li>✓ Widget area detection</li>
+                <li>✓ WordPress v3 theme.json</li>
+              </ul>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

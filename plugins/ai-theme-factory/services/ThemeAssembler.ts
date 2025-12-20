@@ -49,7 +49,12 @@ export class ThemeAssembler {
     const dirs = this.createDirectoryStructure(themeName);
     this.api.sendProgress?.(52, 'Directories created', { type: 'phase', phase: 3 });
 
-    this.api.sendProgress?.(54, 'Generating theme.json metadata...', { type: 'phase', phase: 3 });
+    // Copy assets from job root to theme folder
+    this.api.sendProgress?.(53, 'Copying CSS and assets to theme...', { type: 'phase', phase: 3 });
+    this.copyAssetsToTheme(dirs.assetsDir);
+    this.api.sendProgress?.(54, 'Assets copied', { type: 'phase', phase: 3 });
+
+    this.api.sendProgress?.(55, 'Generating theme.json metadata...', { type: 'phase', phase: 3 });
     this.generateThemeJson(blueprint, themeName, dirs.rootDir);
     this.api.sendProgress?.(56, 'theme.json written', { type: 'phase', phase: 3 });
 
@@ -98,6 +103,59 @@ export class ThemeAssembler {
     });
 
     return { rootDir, templatesDir, partsDir, patternsDir, stylesDir, assetsDir };
+  }
+
+  /**
+   * Copy assets from job root to theme folder
+   * CSS files are consolidated in job-xxx/assets/css/ by ResourceCloner
+   * This method copies them to job-xxx/theme-name/assets/ for packaging
+   */
+  private copyAssetsToTheme(themeAssetsDir: string): void {
+    const jobAssetsDir = path.join(this.tempDir, 'assets');
+    
+    if (!fs.existsSync(jobAssetsDir)) {
+      this.api.warn(`⚠ No assets directory found at ${jobAssetsDir}`);
+      return;
+    }
+
+    this.api.log(`[ThemeAssembler] Copying assets from ${jobAssetsDir} to ${themeAssetsDir}`);
+    
+    try {
+      // Copy entire assets directory recursively
+      this.copyDirectoryRecursive(jobAssetsDir, themeAssetsDir);
+      
+      // Log what was copied
+      const cssDir = path.join(themeAssetsDir, 'css');
+      if (fs.existsSync(cssDir)) {
+        const cssFiles = fs.readdirSync(cssDir).filter(f => f.endsWith('.css'));
+        this.api.log(`✓ Copied ${cssFiles.length} CSS files: ${cssFiles.join(', ')}`);
+      }
+      
+    } catch (error) {
+      this.api.error(`Failed to copy assets: ${error.message}`);
+    }
+  }
+
+  /**
+   * Recursively copy directory contents
+   */
+  private copyDirectoryRecursive(src: string, dest: string): void {
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+
+      if (entry.isDirectory()) {
+        this.copyDirectoryRecursive(srcPath, destPath);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
   }
 
   private generateThemeJson(blueprint: ThemeBlueprint, themeName: string, rootDir: string): void {
@@ -151,12 +209,51 @@ export class ThemeAssembler {
       customTemplates: [
         { name: 'page-with-sidebar', title: 'Page with Sidebar', postTypes: ['page'] },
       ],
+      assets: {
+        css: this.getCSSFiles(rootDir),
+        js: this.getJSFiles(rootDir)
+      },
     };
 
     fs.writeFileSync(
       path.join(rootDir, 'theme.json'),
       JSON.stringify(themeJson, null, 2)
     );
+  }
+
+  /**
+   * Get all CSS files from assets/css directory
+   */
+  private getCSSFiles(rootDir: string): string[] {
+    const cssDir = path.join(rootDir, 'assets', 'css');
+    
+    if (!fs.existsSync(cssDir)) {
+      return [];
+    }
+
+    const cssFiles = fs.readdirSync(cssDir)
+      .filter(file => file.endsWith('.css'))
+      .sort() // Sort alphabetically for consistent order
+      .map(file => `assets/css/${file}`);
+
+    this.api.log(`✓ Found ${cssFiles.length} CSS files for theme.json`);
+    return cssFiles;
+  }
+
+  /**
+   * Get all JS files from assets/js directory
+   * NOTE: WordPress-cloned JS is typically incompatible with NestPress
+   * We skip JS entirely since it usually requires WordPress globals
+   */
+  private getJSFiles(rootDir: string): string[] {
+    // IMPORTANT: Don't include cloned JS files - they typically contain:
+    // - WordPress-specific code (wp-emoji, twemoji)
+    // - jQuery plugins that expect WordPress globals
+    // - Scripts that error out without WordPress environment
+    // 
+    // NestPress themes should use React components instead of JS files
+    this.api.log(`⚠ Skipping JS files - WordPress scripts incompatible with NestPress`);
+    return [];
   }
 
   private async generateTemplates(blueprint: ThemeBlueprint, dirs: any): Promise<string[]> {
@@ -361,6 +458,19 @@ export default function ${templateName}Template({
       files.push(filePath);
     }
 
+    // Create barrel export file (index.ts) in parts folder
+    // This allows templates to import: import { Header, Footer } from '../parts'
+    const barrelContent = `/**
+ * Template Parts - Barrel Export
+ * Allows importing parts with: import { Header, Footer } from '../parts'
+ */
+
+${parts.map(p => `export { ${p.component} } from './${p.name.replace('.tsx', '')}';`).join('\n')}
+`;
+    const barrelPath = path.join(dirs.partsDir, 'index.ts');
+    fs.writeFileSync(barrelPath, barrelContent);
+    this.api.log(`  ✓ Created parts/index.ts barrel export`);
+
     return files;
   }
 
@@ -512,20 +622,33 @@ export function PostMeta({ post, showAuthor = true, showDate = true, showCategor
 
   private generatePatterns(blueprint: ThemeBlueprint, dirs: any): string[] {
     const patterns = [
-      'HeroBanner.tsx',
-      'PostsGrid.tsx',
-      'FeatureGrid.tsx',
-      'CTA.tsx',
+      { name: 'HeroBanner.tsx', component: 'HeroBanner' },
+      { name: 'PostsGrid.tsx', component: 'PostsGrid' },
+      { name: 'FeatureGrid.tsx', component: 'FeatureGrid' },
+      { name: 'CTA.tsx', component: 'CTA' },
     ];
 
     const files: string[] = [];
 
     patterns.forEach(pattern => {
-      const content = `import React from 'react';\n\nexport default function ${pattern.replace('.tsx', '')}() {\n  return <div>Pattern placeholder</div>;\n}\n`;
-      const filePath = path.join(dirs.patternsDir, pattern);
+      const content = `import React from 'react';\n\nexport function ${pattern.component}() {\n  return <div>Pattern placeholder</div>;\n}\n`;
+      const filePath = path.join(dirs.patternsDir, pattern.name);
       fs.writeFileSync(filePath, content);
       files.push(filePath);
     });
+
+    // Create barrel export file (index.ts) in patterns folder
+    // This allows templates to import: import { HeroBanner, PostsGrid } from '../patterns'
+    const barrelContent = `/**
+ * Patterns - Barrel Export
+ * Allows importing patterns with: import { HeroBanner, PostsGrid } from '../patterns'
+ */
+
+${patterns.map(p => `export { ${p.component} } from './${p.name.replace('.tsx', '')}';`).join('\n')}
+`;
+    const barrelPath = path.join(dirs.patternsDir, 'index.ts');
+    fs.writeFileSync(barrelPath, barrelContent);
+    this.api.log(`  ✓ Created patterns/index.ts barrel export`);
 
     return files;
   }

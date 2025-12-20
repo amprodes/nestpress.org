@@ -51,6 +51,7 @@ export interface ThemeBlueprint {
     header: string;
     footer: string;
     sidebar?: string;
+    homepage: string;
     templates: Record<string, string>;
   };
   resources: {
@@ -106,6 +107,8 @@ export class ThemeAnalyzer {
 
       const resources = this.collectResources($, url);
       const htmlSnippets = this.extractHTMLSnippets($);
+      this.api.log(`[ThemeAnalyzer] htmlSnippets created with keys: ${Object.keys(htmlSnippets).join(', ')}`);
+      this.api.log(`[ThemeAnalyzer] homepage property exists: ${!!htmlSnippets.homepage}`);
       const pages = this.discoverPages($, url);
       const siteTitle = $('title').text() || new URL(url).hostname;
       const screenshot = await page.screenshot({ fullPage: false });
@@ -216,12 +219,20 @@ export class ThemeAnalyzer {
   }
 
   private extractHTMLSnippets($: cheerio.CheerioAPI): any {
+    // Extract full body HTML as the homepage template
+    const bodyHTML = $('body').html() || '';
+    
+    this.api.log(`[ThemeAnalyzer] Extracted homepage HTML: ${bodyHTML.length} characters`);
+    
     return {
       header: $('header').html() || '<header><h1>Site Name</h1></header>',
       footer: $('footer').html() || '<footer><p>&copy; 2024</p></footer>',
       sidebar: $('aside, [class*="sidebar"]').first().html(),
+      homepage: bodyHTML, // Full body HTML for homepage
       templates: {
-        home: $('main, [role="main"]').first().html() || '<main></main>',
+        home: bodyHTML,
+        single: $('main, [role="main"], article').first().html() || bodyHTML,
+        page: bodyHTML,
       },
     };
   }

@@ -779,8 +779,19 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     try {
+      // Activate theme - this now persists to database instead of localStorage
       await themesApi.activate(themeId);
+      
+      // Update local state
       setActiveThemeId(themeId);
+      
+      // Update themes list to reflect active state
+      setThemes(prev => prev.map(t => ({
+        ...t,
+        isActive: t.id === themeId
+      })));
+      
+      console.log('✓ Theme activated and persisted to database:', themeId);
     } catch (err) {
       console.error('Failed to activate theme:', err);
       throw err;
