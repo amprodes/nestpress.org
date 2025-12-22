@@ -82,9 +82,24 @@ export class ThemeAnalyzer {
     try {
       this.api.sendProgress?.(11, 'Connecting to target website...', { type: 'phase', phase: 1 });
       
-      browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+      browser = await puppeteer.launch({ 
+        headless: true, 
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+      });
       const page = await browser.newPage();
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+      
+      // Set User-Agent to avoid being blocked
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Navigate with increased timeout and less strict wait condition
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+      
+      // Try to wait for network idle to ensure assets load, but don't fail if it times out
+      try {
+        await page.waitForNetworkIdle({ timeout: 30000 });
+      } catch (e) {
+        this.api.log('[ThemeAnalyzer] Network idle timeout (continuing anyway)', 'warn');
+      }
 
       this.api.sendProgress?.(12, `Fetched ${Math.round((await page.content()).length/1024)}KB of HTML`, { type: 'phase', phase: 1 });
 

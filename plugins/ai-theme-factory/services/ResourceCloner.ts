@@ -119,13 +119,22 @@ export class ResourceCloner {
     };
   }
 
+  private async fetchWithHeaders(url: string): Promise<Response> {
+    return fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      }
+    });
+  }
+
   private async cloneStylesheets(urls: string[], assetsDir: string): Promise<any[]> {
     const results: any[] = [];
 
     for (let i = 0; i < Math.min(urls.length, 10); i++) {
       const url = urls[i];
       try {
-        const response = await fetch(url);
+        const response = await this.fetchWithHeaders(url);
         if (!response.ok) continue;
 
         let content = await response.text();
@@ -164,7 +173,7 @@ export class ResourceCloner {
     for (let i = 0; i < Math.min(urls.length, 20); i++) {
       const url = urls[i];
       try {
-        const response = await fetch(url);
+        const response = await this.fetchWithHeaders(url);
         if (!response.ok) continue;
 
         const buffer = Buffer.from(await response.arrayBuffer());
@@ -207,7 +216,7 @@ export class ResourceCloner {
     for (let i = 0; i < Math.min(urls.length, 5); i++) {
       const url = urls[i];
       try {
-        const response = await fetch(url);
+        const response = await this.fetchWithHeaders(url);
         if (!response.ok) continue;
 
         const buffer = Buffer.from(await response.arrayBuffer());
@@ -244,7 +253,7 @@ export class ResourceCloner {
     for (let i = 0; i < Math.min(safeUrls.length, 5); i++) {
       const url = safeUrls[i];
       try {
-        const response = await fetch(url);
+        const response = await this.fetchWithHeaders(url);
         if (!response.ok) continue;
 
         const content = await response.text();

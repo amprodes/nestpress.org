@@ -14,7 +14,6 @@ import * as path from 'path';
 import type { ThemeBlueprint } from './ThemeAnalyzer';
 import type { PluginAPI } from '../types';
 import { ThemeValidator } from './ThemeValidator';
-import { AINestPressifier } from './AINestPressifier';
 import { ThemePatternMemory } from './ThemePatternMemory';
 
 export interface ThemeStructure {
@@ -53,6 +52,10 @@ export class ThemeAssembler {
     this.api.sendProgress?.(53, 'Copying CSS and assets to theme...', { type: 'phase', phase: 3 });
     this.copyAssetsToTheme(dirs.assetsDir);
     this.api.sendProgress?.(54, 'Assets copied', { type: 'phase', phase: 3 });
+    
+    // Copy original HTML to theme for fallback templates
+    this.api.sendProgress?.(54.5, 'Preserving original HTML for design fidelity...', { type: 'phase', phase: 3 });
+    this.copyOriginalHTMLToTheme(dirs.rootDir);
 
     this.api.sendProgress?.(55, 'Generating theme.json metadata...', { type: 'phase', phase: 3 });
     this.generateThemeJson(blueprint, themeName, dirs.rootDir);
@@ -88,6 +91,28 @@ export class ThemeAssembler {
       patternFiles,
       assetFiles: [],
     };
+  }
+  
+  /**
+   * Copy original-html folder to theme directory
+   * This preserves the original cloned HTML for fallback templates
+   */
+  private copyOriginalHTMLToTheme(themeRootDir: string): void {
+    const originalHTMLDir = path.join(this.tempDir, 'original-html');
+    const destDir = path.join(themeRootDir, 'original-html');
+    
+    if (!fs.existsSync(originalHTMLDir)) {
+      this.api.log(`⚠ No original-html directory found at ${originalHTMLDir}`);
+      return;
+    }
+    
+    try {
+      this.copyDirectoryRecursive(originalHTMLDir, destDir);
+      const htmlFiles = fs.readdirSync(destDir).filter(f => f.endsWith('.html'));
+      this.api.log(`✓ Copied ${htmlFiles.length} original HTML files for design fidelity: ${htmlFiles.join(', ')}`);
+    } catch (error) {
+      this.api.error(`Failed to copy original HTML: ${error.message}`);
+    }
   }
 
   private createDirectoryStructure(themeName: string): any {
@@ -565,7 +590,7 @@ export function Sidebar({ widgets = [], recentPosts = [] }: SidebarProps) {
 
   return (
     <aside>
-      {widgetList.map(widget => ( (
+      {widgetList.map(widget => (
         <div key={widget?.id} className="mb-6 p-4 rounded" style={{ backgroundColor: colors.background }}>
           <h3 className="font-bold mb-2">{widget?.title}</h3>
           <div>{widget?.content}</div>
@@ -616,7 +641,9 @@ export function PostMeta({ post, showAuthor = true, showDate = true, showCategor
 }
 `;
       default:
-        return `import React from 'react';\n\nexport default function ${component}() {\n  return <div>${component}</div>;\n}\n`;
+        // Ensure component name is valid (no starting numbers)
+        const validComponentName = /^[0-9]/.test(component) ? `Component${component}` : component;
+        return `import React from 'react';\n\nexport default function ${validComponentName}() {\n  return <div>${component}</div>;\n}\n`;
     }
   }
 
@@ -702,7 +729,8 @@ export { default as NotFoundTemplate } from './templates/404';
   }
 
   private capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1).replace(/-/g, '');
+    // Handle kebab-case to PascalCase (e.g. page-sidebar -> PageSidebar)
+    return str.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
   }
 
   /**
@@ -726,7 +754,7 @@ export { default as NotFoundTemplate } from './templates/404';
     result.errors.forEach(err => this.memory.recordError(err, fileType, filename));
     
     // Has errors - fix with AI
-    this.api.log(`  ⚠️ ${filename} has ${result.errors.length} errors - fixing with AI...`);
+    this.api.log(`  ⚠️ ${filename} has ${result.errors.length} errors`);
     
     // Log first 3 errors for debugging
     if (result.errors.length > 0) {
@@ -736,36 +764,9 @@ export { default as NotFoundTemplate } from './templates/404';
       });
     }
     
-    const nestpressifier = new AINestPressifier(this.api);
-    const fixedCode = await nestpressifier.fixTypeScriptErrors(originalCode, result.errors, filename);
+    // AI fix removed in new architecture - just fail
+    this.api.log(`  ❌ ${filename} has ${result.errors.length} errors - ABORTING (Auto-fix disabled)`, 'error');
     
-    // Validate again after fix
-    fs.writeFileSync(filePath, fixedCode);
-    const revalidate = await validator.validateFile(filePath, themeDir);
-    
-    if (revalidate.valid) {
-      this.api.log(`  ✓ ${filename} fixed successfully`);
-      
-      // Learn from successful fix
-      this.memory.learnFromFix(originalCode, fixedCode, result.errors, fileType);
-      
-      return fixedCode;
-    } else {
-      // AI fix failed - STOP GENERATION
-      this.api.log(`  ❌ ${filename} still has ${revalidate.errors.length} errors after AI fix - ABORTING`, 'error');
-      
-      // Log remaining errors
-      this.api.log(`  Remaining errors:`);
-      revalidate.errors.slice(0, 5).forEach(err => {
-        this.api.log(`    - Line ${err.line}: ${err.message} (TS${err.code})`);
-      });
-      
-      // Learn even from failed attempts for next time
-      if (revalidate.errors.length < result.errors.length) {
-        this.memory.learnFromFix(originalCode, fixedCode, result.errors, fileType);
-      }
-      
-      throw new Error(`Failed to fix TypeScript errors in ${filename}. AI could not resolve ${revalidate.errors.length} errors. Theme generation aborted.`);
-    }
+    throw new Error(`Validation failed for ${filename} with ${result.errors.length} errors. Automatic fixing is disabled in the new architecture to prevent empty file generation.`);
   }
 }
