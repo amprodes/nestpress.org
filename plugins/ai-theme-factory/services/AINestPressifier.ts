@@ -13,9 +13,11 @@
 import * as cheerio from 'cheerio';
 import * as fs from 'fs';
 import * as path from 'path';
+import { HtmlFidelityConverter } from './HtmlFidelityConverter';
 
 export class AINestPressifier {
   private api: any;
+  private converter!: HtmlFidelityConverter; // Will be initialized in convertToNestPress
 
   constructor(api: any) {
     this.api = api;
@@ -28,6 +30,12 @@ export class AINestPressifier {
     this.api.log('🎨 Starting NestPressification (HTML-First Fidelity Strategy)...');
     
     try {
+      // Initialize converter with blueprint data
+      this.converter = new HtmlFidelityConverter({
+        themeSlug: blueprint.siteTitle?.toLowerCase().replace(/\s+/g, '-') || 'theme',
+        sourceUrl: blueprint.siteUrl || 'https://example.com'
+      });
+      
       const themeRootDir = theme.rootDir;
       const originalHTMLDir = path.join(themeRootDir, 'original-html');
       
@@ -165,7 +173,8 @@ export class AINestPressifier {
       return;
     }
 
-    let headerHtml = $.html(headerEl);
+    // CRITICAL FIX: Use .html() to get INNER content, not $.html() which adds <html><body> wrappers
+    let headerHtml = headerEl.html() || '';
     
     // Make navigation dynamic - find nav links and replace with dynamic menu
     const $header = cheerio.load(headerHtml);
@@ -192,10 +201,11 @@ export class AINestPressifier {
       }
     }
 
-    headerHtml = $header.html() || headerHtml;
+    // Get body content only (avoid <html><head> wrappers that cheerio.load adds)
+    headerHtml = $header('body').html() || headerHtml;
     
-    // Convert to JSX
-    const jsxContent = this.htmlToJsx(headerHtml);
+    // Convert to JSX using HtmlFidelityConverter (DOM-based, handles class→className, escapes JSON)
+    const jsxContent = this.converter.convert(headerHtml);
     
     const headerComponent = `import * as React from 'react';
 import type { ThemeTemplateProps } from '@/types';
@@ -228,14 +238,14 @@ export function Header(props: ThemeTemplateProps) {
       return;
     }
 
-    let footerHtml = $.html(footerEl);
+    // CRITICAL FIX: Use .html() to get INNER content, not $.html() which adds <html><body> wrappers
+    let footerHtml = footerEl.html() || '';
     
-    // Make copyright year dynamic
-    const currentYear = new Date().getFullYear();
-    footerHtml = footerHtml.replace(new RegExp(`(©|&copy;|copyright)\\\\s*\\\\d{4}`, 'gi'), `© {new Date().getFullYear()}`);
+    // Skip complex copyright replacement for now to avoid destroying HTML
+    // TODO: Implement proper text node replacement without affecting child elements
     
-    // Convert to JSX
-    const jsxContent = this.htmlToJsx(footerHtml);
+    // Convert to JSX using HtmlFidelityConverter (DOM-based, handles class→className, escapes JSON)
+    const jsxContent = this.converter.convert(footerHtml);
     
     const footerComponent = `import * as React from 'react';
 import type { ThemeTemplateProps } from '@/types';
@@ -293,8 +303,8 @@ export function Footer(props: ThemeTemplateProps) {
     // Inject dynamic content based on template type
     bodyContent = this.injectDynamicContent(bodyContent, type, $);
     
-    // Convert to JSX
-    const jsxContent = this.htmlToJsx(bodyContent);
+    // Convert to JSX using HtmlFidelityConverter (DOM-based, handles class→className, escapes JSON)
+    const jsxContent = this.converter.convert(bodyContent);
     
     // Generate component name
     const componentName = this.getComponentName(templateName);

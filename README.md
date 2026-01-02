@@ -20,6 +20,17 @@
 - Media library with file uploads
 - Comment management
 - SEO optimization with meta tags
+- **✨ WordPress Meta System** - Custom fields for posts, users, and comments (wp_postmeta, wp_usermeta, wp_commentmeta)
+- **✨ WordPress Taxonomy System** - Full taxonomy architecture (wp_terms, wp_term_taxonomy, wp_term_relationships, wp_termmeta)
+  - Built-in taxonomies: categories (hierarchical) and tags (non-hierarchical)
+  - Custom taxonomy registration
+  - Term management and metadata
+  - Post-term relationships
+- **✨ WordPress Post Type System** - Custom post type registration and management
+  - Built-in post types: post, page, attachment
+  - Custom post types (e.g., product with WooCommerce-style taxonomies)
+  - Post type validation and queries
+  - WordPress-compatible API (register_post_type, get_post_types, etc.)
 
 ### 🛒 E-commerce (Shopify-like)
 - Product catalog management

@@ -84,6 +84,8 @@ export { default as ArchiveTemplate } from './templates/archive';
 export { default as CategoryTemplate } from './templates/category';
 export { default as SearchTemplate } from './templates/search';
 export { default as NotFoundTemplate } from './templates/404';
+export { default as ShopTemplate } from './templates/shop';
+export { default as CartTemplate } from './templates/cart';
 
 // Theme metadata
 export const theme = {

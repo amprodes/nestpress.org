@@ -5,6 +5,9 @@
 
 import DOMPurify from 'dompurify';
 
+// WordPress Compatibility Helpers - TEMPORARY FILE MARKER
+// This will be moved to wp.ts
+
 /**
  * Sanitize HTML content to prevent XSS attacks
  * Uses DOMPurify with secure defaults
@@ -254,3 +257,122 @@ export const generateCSPNonce = (): string => {
   crypto.getRandomValues(array);
   return btoa(String.fromCharCode.apply(null, Array.from(array)));
 };
+
+// ============================================================================
+// WORDPRESS COMPATIBILITY HELPERS (wp.ts content)
+// These will be extracted to a separate file
+// ============================================================================
+
+/**
+ * WordPress Compatibility Helpers
+ * 
+ * These helpers normalize WordPress field names across frontend components.
+ * They read WP-standard fields first (post_title, post_content, etc.) and
+ * fall back to legacy field names for backward compatibility.
+ */
+
+import { PostStatus } from '../types';
+
+/**
+ * Get post title with WP field preference
+ */
+export const getPostTitle = (post: any): string => {
+  return post?.post_title ?? post?.title ?? '(Untitled)';
+};
+
+/**
+ * Get post slug with WP field preference
+ */
+export const getPostSlug = (post: any): string => {
+  return post?.post_name ?? post?.slug ?? '';
+};
+
+/**
+ * Get post content with WP field preference
+ */
+export const getPostContent = (post: any): string => {
+  return post?.post_content ?? post?.content ?? '';
+};
+
+/**
+ * Get post excerpt with WP field preference
+ */
+export const getPostExcerpt = (post: any): string => {
+  return post?.post_excerpt ?? post?.excerpt ?? '';
+};
+
+/**
+ * Get post date with WP field preference
+ */
+export const getPostDate = (post: any): string => {
+  return post?.post_date ?? post?.date ?? post?.createdAt ?? new Date().toISOString();
+};
+
+/**
+ * Get post type with WP field preference
+ */
+export const getPostType = (post: any): 'post' | 'page' => {
+  const type = post?.post_type ?? post?.type ?? 'post';
+  return type === 'page' ? 'page' : 'post';
+};
+
+/**
+ * Get post categories (array)
+ */
+export const getPostCategories = (post: any): string[] => {
+  return post?.categories ?? [];
+};
+
+/**
+ * Get post tags (array)
+ */
+export const getPostTags = (post: any): string[] => {
+  return post?.tags ?? [];
+};
+
+/**
+ * Get post author name
+ */
+export const getPostAuthor = (post: any): string => {
+  return post?.post_author_name ?? post?.author?.name ?? post?.author ?? 'Unknown';
+};
+
+/**
+ * Get raw post status from WordPress or legacy fields
+ */
+export const getPostStatusRaw = (post: any): string => {
+  return post?.post_status ?? post?.status ?? 'draft';
+};
+
+/**
+ * Get post status label normalized to frontend enum values
+ */
+export const getPostStatusLabel = (post: any): PostStatus => {
+  const status = String(getPostStatusRaw(post)).toLowerCase();
+  
+  // WordPress statuses
+  if (status === 'publish' || status === 'published') return PostStatus.PUBLISHED;
+  if (status === 'trash' || status === 'trashed') return PostStatus.TRASH;
+  
+  // Draft, pending, private, auto-draft, inherit, etc.
+  return PostStatus.DRAFT;
+};
+
+/**
+ * Get WordPress post ID (prefers ID over id)
+ */
+export const getPostId = (post: any): string => {
+  const wpId = post?.ID;
+  if (wpId !== undefined && wpId !== null) {
+    return String(wpId);
+  }
+  return post?.id ?? post?._id ?? Date.now().toString();
+};
+
+/**
+ * Check if post has WP fields (versus only legacy fields)
+ */
+export const hasWPFields = (post: any): boolean => {
+  return !!(post?.post_title || post?.post_content || post?.post_status || post?.post_date);
+};
+

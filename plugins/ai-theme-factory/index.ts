@@ -6,6 +6,7 @@
  * Requires at least: 1.0.0
  */
 
+import * as path from 'path';
 import type { NestPressPlugin } from '../../backend/src/modules/plugins/plugin-loader.service';
 
 const AIThemeFactoryPlugin: NestPressPlugin = {
@@ -37,7 +38,7 @@ const AIThemeFactoryPlugin: NestPressPlugin = {
         if (!api._backendLoaded) {
           try {
             console.log('[ai-theme-factory] 📦 Loading backend handlers from:', __dirname + '/backend.ts');
-            const backend = require('./backend.ts');
+            const backend = await import('./backend.ts');
             api._backendHandlers = backend;
             api._backendLoaded = true;
             console.log('[ai-theme-factory] ✅ Backend handlers loaded successfully');
@@ -206,7 +207,6 @@ const AIThemeFactoryPlugin: NestPressPlugin = {
     // GET /api/v1/plugins/ai-theme-factory/download/:slug
     api.registerRoute('GET', '/download/:slug', async (req: any, res: any) => {
       const { slug } = req.params;
-      const path = require('path');
       const zipPath = path.join(process.cwd(), 'public', 'downloads', `${slug}.zip`);
       
       return res.download(zipPath, `${slug}.zip`, (err: any) => {

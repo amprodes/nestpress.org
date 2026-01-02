@@ -101,6 +101,9 @@ export class CSSConsolidator {
       const mainPath = path.join(outputDir, 'css', 'main.css');
       let mainContent = this.addHeader('Theme Styles', mainCSS);
       
+      // Resolve CSS custom properties (remove undefined variables)
+      mainContent = this.resolveCSSCustomProperties(mainContent);
+      
       // Validate and fix CSS syntax
       const validationResult = this.validateCSS(mainContent);
       if (!validationResult.valid) {
@@ -117,6 +120,9 @@ export class CSSConsolidator {
     if (vendorCSS) {
       const vendorPath = path.join(outputDir, 'css', 'vendor.css');
       let vendorContent = this.addHeader('Vendor/Library Styles', vendorCSS);
+      
+      // Resolve CSS custom properties (remove undefined variables)
+      vendorContent = this.resolveCSSCustomProperties(vendorContent);
       
       // Validate and fix CSS syntax
       const validationResult = this.validateCSS(vendorContent);
@@ -422,6 +428,45 @@ export class CSSConsolidator {
  */
 
 ${content}`;
+  }
+
+  /**
+   * Resolve CSS custom properties (CSS variables)
+   * Removes undefined var() references or extracts fallback values
+   */
+  private resolveCSSCustomProperties(css: string): string {
+    // Pattern: var(--variable-name) or var(--variable-name, fallback)
+    return css.replace(/var\s*\(\s*(--[^,)]+)(?:\s*,\s*([^)]+))?\s*\)/g, (match, varName, fallback) => {
+      // If there's a fallback value, use it
+      if (fallback) {
+        return fallback.trim();
+      }
+      
+      // No fallback: try to extract variable definition from :root
+      const varDefRegex = new RegExp(`${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;]+);`, 'i');
+      const varMatch = css.match(varDefRegex);
+      
+      if (varMatch && varMatch[1]) {
+        return varMatch[1].trim();
+      }
+      
+      // Default fallback values for common patterns
+      if (varName.includes('color')) {
+        return 'inherit';
+      }
+      if (varName.includes('font')) {
+        return 'inherit';
+      }
+      if (varName.includes('spacing') || varName.includes('margin') || varName.includes('padding')) {
+        return '0';
+      }
+      if (varName.includes('width') || varName.includes('height')) {
+        return 'auto';
+      }
+      
+      // Last resort: return inherit
+      return 'inherit';
+    });
   }
 
   /**

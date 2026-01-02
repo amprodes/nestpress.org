@@ -55,10 +55,10 @@ const defaultSystemConfig: SystemConfig = {
 
 const defaultWizardSteps: WizardStep[] = [
   {
-    id: 'welcome',
-    title: 'Welcome',
-    description: 'Get started with NestPress',
-    icon: 'rocket',
+    id: 'language',
+    title: 'Language',
+    description: 'Choose your language',
+    icon: 'globe',
     required: true,
     completed: false,
     category: 'custom',
@@ -71,6 +71,15 @@ const defaultWizardSteps: WizardStep[] = [
     required: true,
     completed: false,
     category: 'database',
+  },
+  {
+    id: 'site-info',
+    title: 'Site Information',
+    description: 'Site title and admin email',
+    icon: 'settings',
+    required: true,
+    completed: false,
+    category: 'custom',
   },
   {
     id: 'ai',

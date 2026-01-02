@@ -15,7 +15,9 @@ import {
   Copy,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  Globe,
+  Settings
 } from 'lucide-react';
 import { useConfig } from '../../contexts/ConfigContext';
 import DatabaseStep from './steps/DatabaseStep';
@@ -31,11 +33,13 @@ const SetupWizard: React.FC = () => {
     const className = `w-6 h-6 ${isActive ? 'text-white' : isCompleted ? 'text-green-600' : 'text-gray-400'}`;
     
     switch (iconName) {
-      case 'rocket': return <Rocket className={className} />;
+      case 'globe': return <Globe className={className} />;
       case 'database': return <Database className={className} />;
+      case 'settings': return <Settings className={className} />;
       case 'sparkles': return <Sparkles className={className} />;
       case 'credit-card': return <CreditCard className={className} />;
       case 'check-circle': return <CheckCircle className={className} />;
+      case 'rocket': return <Rocket className={className} />;
       default: return <CheckCircle className={className} />;
     }
   };
@@ -44,10 +48,12 @@ const SetupWizard: React.FC = () => {
     const step = steps[currentStep];
     
     switch (step.id) {
-      case 'welcome':
-        return <WelcomeStep />;
+      case 'language':
+        return <LanguageStep />;
       case 'database':
         return <DatabaseStep />;
+      case 'site-info':
+        return <SiteInfoStep />;
       case 'ai':
         return <AIStep />;
       case 'payment':
@@ -215,6 +221,241 @@ const SetupWizard: React.FC = () => {
           </div>
         </footer>
       </main>
+    </div>
+  );
+};
+
+// Language Step Component
+const LanguageStep: React.FC = () => {
+  const { completeStep, nextStep } = useConfig();
+  const [selectedLanguage, setSelectedLanguage] = useState('en_US');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const languages = [
+    { code: 'en_US', nativeName: 'English (United States)' },
+    { code: 'en_GB', nativeName: 'English (UK)' },
+    { code: 'es_ES', nativeName: 'Español' },
+    { code: 'fr_FR', nativeName: 'Français' },
+    { code: 'de_DE', nativeName: 'Deutsch' },
+    { code: 'it_IT', nativeName: 'Italiano' },
+    { code: 'pt_BR', nativeName: 'Português do Brasil' },
+    { code: 'ja', nativeName: '日本語' },
+    { code: 'zh_CN', nativeName: '简体中文' },
+    { code: 'ar', nativeName: 'العربية' },
+  ];
+
+  const handleContinue = async () => {
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const { settingsApi } = await import('../../services/api');
+      await settingsApi.update({ language: selectedLanguage });
+      completeStep('language');
+      nextStep();
+    } catch (err: any) {
+      console.error('Failed to save language:', err);
+      setError(err.message || 'Failed to save language setting');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="py-6">
+      <div className="text-center mb-10">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
+          <Globe className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Select Language</h2>
+        <p className="text-slate-400">
+          Choose your preferred language for the admin interface
+        </p>
+      </div>
+
+      <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 mb-6">
+        <label className="block text-slate-300 font-medium mb-3">
+          Site Language
+        </label>
+        <select
+          value={selectedLanguage}
+          onChange={(e) => setSelectedLanguage(e.target.value)}
+          className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500 transition-colors"
+        >
+          {languages.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.nativeName}
+            </option>
+          ))}
+        </select>
+        <p className="text-slate-400 text-sm mt-2">
+          You can install additional languages and change this later in Settings.
+        </p>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="flex justify-center">
+        <button
+          onClick={handleContinue}
+          disabled={saving}
+          className="inline-flex items-center space-x-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5" />
+              <span>Continue</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Site Info Step Component
+const SiteInfoStep: React.FC = () => {
+  const { completeStep, nextStep } = useConfig();
+  const [siteName, setSiteName] = useState('NestPress Site');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [discourageCrawlers, setDiscourageCrawlers] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleContinue = async () => {
+    if (!siteName.trim()) {
+      setError('Site title is required');
+      return;
+    }
+    if (!adminEmail.trim()) {
+      setError('Admin email is required');
+      return;
+    }
+    if (!adminEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const { settingsApi } = await import('../../services/api');
+      await settingsApi.update({
+        siteName,
+        adminEmail,
+        discourageCrawlers,
+      });
+      completeStep('site-info');
+      nextStep();
+    } catch (err: any) {
+      console.error('Failed to save site info:', err);
+      setError(err.message || 'Failed to save site information');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="py-6">
+      <div className="text-center mb-10">
+        <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/25">
+          <Settings className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Site Information</h2>
+        <p className="text-slate-400">
+          Set up your site title and admin email address
+        </p>
+      </div>
+
+      <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 mb-6 space-y-6">
+        <div>
+          <label className="block text-slate-300 font-medium mb-2">
+            Site Title
+          </label>
+          <input
+            type="text"
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            placeholder="My Awesome Site"
+            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+          />
+          <p className="text-slate-400 text-sm mt-1">
+            This will appear in your site header and browser title.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-slate-300 font-medium mb-2">
+            Admin Email Address
+          </label>
+          <input
+            type="email"
+            value={adminEmail}
+            onChange={(e) => setAdminEmail(e.target.value)}
+            placeholder="admin@example.com"
+            className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+          />
+          <p className="text-slate-400 text-sm mt-1">
+            This email will receive admin notifications and password resets.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-slate-700">
+          <label className="flex items-start space-x-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={discourageCrawlers}
+              onChange={(e) => setDiscourageCrawlers(e.target.checked)}
+              className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+            />
+            <div className="flex-1">
+              <div className="text-slate-300 font-medium group-hover:text-white transition-colors">
+                Discourage search engines from indexing this site
+              </div>
+              <p className="text-slate-400 text-sm mt-1">
+                Enable this for development or private sites. You can change this later in Settings.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="flex justify-center">
+        <button
+          onClick={handleContinue}
+          disabled={saving}
+          className="inline-flex items-center space-x-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-5 h-5" />
+              <span>Continue</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 };

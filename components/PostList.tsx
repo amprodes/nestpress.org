@@ -4,6 +4,7 @@ import { ViewState, PostStatus, Post } from '../types';
 import { DataTable, Column, StatusFilter, BulkAction, QuickEditField } from './common/DataTable';
 import { useToast } from './Toast';
 import { useModal } from './Modal';
+import { getPostTitle, getPostStatusLabel, getPostDate, getPostCategories, getPostTags } from '../utils';
 
 /**
  * NestPress Unified Content List
@@ -74,8 +75,8 @@ const PostList: React.FC<PostListProps> = ({ postType = 'post' }) => {
       width: postType === 'page' ? 'w-1/2' : 'w-1/3',
       render: (item) => (
         <>
-          {item.title}
-          {item.status === PostStatus.DRAFT && <span className="text-gray-500 font-normal"> — Draft</span>}
+          {getPostTitle(item)}
+          {getPostStatusLabel(item) === PostStatus.DRAFT && <span className="text-gray-500 font-normal"> — Draft</span>}
         </>
       ),
     },
@@ -86,15 +87,15 @@ const PostList: React.FC<PostListProps> = ({ postType = 'post' }) => {
   const columns: Column<Post>[] = postType === 'post' 
     ? [
         ...baseColumns,
-        { key: 'categories', label: 'Categories', render: (item) => item.categories.join(', ') || '—' },
-        { key: 'tags', label: 'Tags', render: (item) => item.tags.join(', ') || '—' },
+        { key: 'categories', label: 'Categories', render: (item) => getPostCategories(item).join(', ') || '—' },
+        { key: 'tags', label: 'Tags', render: (item) => getPostTags(item).join(', ') || '—' },
         {
           key: 'date',
           label: 'Date',
           render: (item) => (
             <div>
-              <div>{item.status}</div>
-              <div className="text-xs text-gray-500">{new Date(item.date).toLocaleDateString()}</div>
+              <div>{getPostStatusLabel(item)}</div>
+              <div className="text-xs text-gray-500">{new Date(getPostDate(item)).toLocaleDateString()}</div>
             </div>
           ),
         },
@@ -106,8 +107,8 @@ const PostList: React.FC<PostListProps> = ({ postType = 'post' }) => {
           label: 'Date',
           render: (item) => (
             <div>
-              <div>{item.status}</div>
-              <div className="text-xs text-gray-500">{new Date(item.date).toLocaleDateString()}</div>
+              <div>{getPostStatusLabel(item)}</div>
+              <div className="text-xs text-gray-500">{new Date(getPostDate(item)).toLocaleDateString()}</div>
             </div>
           ),
         },

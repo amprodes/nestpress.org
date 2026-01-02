@@ -478,7 +478,7 @@ Return only valid JSON, no markdown or explanations.`;
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
 
@@ -501,7 +501,7 @@ Return only valid JSON, no markdown or explanations.`;
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     return data.choices?.[0]?.message?.content || '';
   }
 
@@ -524,7 +524,7 @@ Return only valid JSON, no markdown or explanations.`;
       throw new Error(`Anthropic API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     return data.content?.[0]?.text || '';
   }
 

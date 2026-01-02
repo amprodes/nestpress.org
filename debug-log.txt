@@ -1,0 +1,52 @@
+[2025-12-21T18:45:06.966Z] Processing theme: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766342557433-6nol2xhmq/enfold-business-flat
+[DEBUG] Template file: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766342557433-6nol2xhmq/enfold-business-flat/templates/index.tsx
+[DEBUG] Job Dir: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766342557433-6nol2xhmq
+[DEBUG] Original HTML Dir: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766342557433-6nol2xhmq/original-html
+[DEBUG] Exists: true
+[DEBUG] Contents of /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766342557433-6nol2xhmq: assets, enfold-business-flat, original-html
+[2025-12-22T14:13:21.702Z] Processing theme: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/redox-dark
+[DEBUG] Template file: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/redox-dark/templates/index.tsx
+[DEBUG] Job Dir: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78
+[DEBUG] Original HTML Dir: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html
+[DEBUG] Exists: true
+[DEBUG] Contents of /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78: assets, original-html, redox-dark
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for home
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/home.html, Exists: true
+[DEBUG] Read 209193 bytes from /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/home.html
+[DEBUG] usingOriginal: true, originalHTML length: 209193
+[DEBUG] generateFallbackTemplate called for home
+[DEBUG] Found HTML at /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/home.html
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for single
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/single.html, Exists: true
+[DEBUG] Read 209193 bytes from /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/single.html
+[DEBUG] usingOriginal: true, originalHTML length: 209193
+[DEBUG] generateFallbackTemplate called for single
+[DEBUG] Found HTML at /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/single.html
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for page
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html, Exists: true
+[DEBUG] Read 209193 bytes from /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html
+[DEBUG] usingOriginal: true, originalHTML length: 209193
+[DEBUG] generateFallbackTemplate called for page
+[DEBUG] Found HTML at /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for page-sidebar
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page-sidebar.html, Exists: false
+[DEBUG] Checking fallback path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/index.html, Exists: true
+[DEBUG] usingOriginal: false, originalHTML length: 0
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for archive
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/archive.html, Exists: false
+[DEBUG] Checking fallback path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/index.html, Exists: true
+[DEBUG] usingOriginal: false, originalHTML length: 0
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for category
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/category.html, Exists: false
+[DEBUG] Checking fallback path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/index.html, Exists: true
+[DEBUG] usingOriginal: false, originalHTML length: 0
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for page
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html, Exists: true
+[DEBUG] Read 209193 bytes from /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html
+[DEBUG] usingOriginal: true, originalHTML length: 209193
+[DEBUG] generateFallbackTemplate called for page
+[DEBUG] Found HTML at /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/page.html
+[DEBUG] nestpressifyTemplate checking for HTML in /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html for 404
+[DEBUG] Checking path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/404.html, Exists: false
+[DEBUG] Checking fallback path: /home/sofyserver/Downloads/nestpress-cms/backend/temp/themes/job-1766412609232-jf6ygek78/original-html/index.html, Exists: true
+[DEBUG] usingOriginal: false, originalHTML length: 0

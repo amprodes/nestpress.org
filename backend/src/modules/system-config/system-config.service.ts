@@ -502,7 +502,7 @@ export class SystemConfigService implements OnModuleInit {
           );
           if (!response.ok) {
             const error = await response.json();
-            return { success: false, message: error.error?.message || 'Invalid API key' };
+            return { success: false, message: (error as any).error?.message || 'Invalid API key' };
           }
           break;
         }

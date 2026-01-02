@@ -187,6 +187,16 @@
       "name": "page-with-sidebar",
       "title": "Page (With Sidebar)",
       "postTypes": ["page"]
+    },
+    {
+      "name": "shop",
+      "title": "Shop",
+      "postTypes": ["page"]
+    },
+    {
+      "name": "cart",
+      "title": "Cart",
+      "postTypes": ["page"]
     }
   ],
   "templateParts": [

@@ -908,15 +908,39 @@ export interface HealthStatus {
 
 export const healthApi = {
   check: async (): Promise<{ status: string; timestamp: string }> => {
-    const response = await fetch(`${API_BASE_URL}/health`);
-    if (!response.ok) {
-      throw new Error(`Health check failed: ${response.status}`);
+    console.log('[healthApi.check] Checking backend health at:', `${API_BASE_URL}/health`);
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch(`${API_BASE_URL}/health`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      clearTimeout(timeoutId);
+      
+      console.log('[healthApi.check] Response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
+      }
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Empty response from health endpoint');
+      }
+      const data = JSON.parse(text);
+      console.log('[healthApi.check] Backend is healthy:', data);
+      return data;
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.error('[healthApi.check] Request timeout - backend not responding at:', API_BASE_URL);
+        throw new Error(`Backend timeout at ${API_BASE_URL}. Is the server running?`);
+      }
+      console.error('[healthApi.check] Failed:', error.message);
+      throw error;
     }
-    const text = await response.text();
-    if (!text) {
-      throw new Error('Empty response from health endpoint');
-    }
-    return JSON.parse(text);
   },
 
   getStatus: async (): Promise<HealthStatus> => {
@@ -935,8 +959,11 @@ export const healthApi = {
     try {
       await healthApi.check();
       return true;
-    } catch (error) {
-      console.error('API health check failed:', error);
+    } catch (error: any) {
+      console.error('❌ API health check failed:', error.message);
+      console.error('   Expected backend at:', API_BASE_URL);
+      console.error('   Please ensure backend is running on port 4000');
+      console.error('   Run: cd backend && npm run start:dev');
       return false;
     }
   },

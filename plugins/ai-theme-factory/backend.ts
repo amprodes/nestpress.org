@@ -25,6 +25,7 @@ if (typeof globalThis.File === 'undefined') {
 
 import * as path from 'path';
 import * as fs from 'fs';
+import AdmZip from 'adm-zip';
 import { ThemeAnalyzer } from './services/ThemeAnalyzer';
 import { ResourceCloner } from './services/ResourceCloner';
 import { ThemeAssembler } from './services/ThemeAssembler';
@@ -205,7 +206,6 @@ export async function handleListThemes(api: any): Promise<any> {
  */
 export async function handleInstallTheme(slug: string, api: any): Promise<any> {
   try {
-    const AdmZip = require('adm-zip');
     const zipPath = path.join(process.cwd(), 'public', 'downloads', `${slug}.zip`);
     const themesDir = path.join(process.cwd(), '..', 'themes');
     const targetDir = path.join(themesDir, slug);

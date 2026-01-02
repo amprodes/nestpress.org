@@ -14,7 +14,7 @@ const ProductEditor: React.FC = () => {
       compareAtPrice: 0,
       inventory: 0,
       sku: '',
-      status: 'Active',
+      status: 'active',
       images: [],
       vendor: '',
       category: ''
@@ -196,9 +196,9 @@ const ProductEditor: React.FC = () => {
                     onChange={e => setFormData({...formData, status: e.target.value as any})}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white"
                 >
-                    <option value="Active">Active</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Archived">Archived</option>
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="archived">Archived</option>
                 </select>
                 </DataCardBody>
             </DataCard>

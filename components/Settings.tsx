@@ -865,6 +865,41 @@ const Settings: React.FC = () => {
         </div>
       </div>
 
+      {/* Database Seeding */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Database Setup</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Initialize your site with default pages (Home, About, Contact, Blog).
+        </p>
+        <button
+          onClick={async () => {
+            try {
+              const token = localStorage.getItem('nestpress_access_token');
+              const response = await fetch('http://localhost:4000/api/v1/posts/seed/default-pages', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (response.ok) {
+                showToast('Default pages created successfully!', 'success');
+              } else {
+                const error = await response.json();
+                showToast(error.message || 'Failed to create default pages', 'error');
+              }
+            } catch (error) {
+              showToast('Error creating default pages. Make sure the backend is running.', 'error');
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+        >
+          <Database className="w-4 h-4" />
+          Seed Default Pages
+        </button>
+      </div>
+
       {/* Provider Configuration Status */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Service Providers</h2>

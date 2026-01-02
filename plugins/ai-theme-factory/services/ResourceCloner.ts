@@ -141,6 +141,9 @@ export class ResourceCloner {
         
         // Rewrite URLs in CSS
         content = this.rewriteCssUrls(content, url);
+        
+        // Resolve CSS custom properties (remove undefined var() references)
+        content = this.resolveCSSCustomProperties(content);
 
         const filename = `style-${i + 1}.css`;
         const localPath = path.join(assetsDir, 'css', filename);
@@ -276,9 +279,22 @@ export class ResourceCloner {
   private rewriteCssUrls(css: string, baseUrl: string): string {
     // Replace url() references with local paths
     return css.replace(/url\(['"]?([^'")\s]+)['"]?\)/g, (match, url) => {
-      if (url.startsWith('data:') || url.startsWith('http')) {
+      // Keep data URIs
+      if (url.startsWith('data:')) {
         return match;
       }
+      
+      // Remove external font URLs (they cause CORS issues)
+      if (url.startsWith('http') && (url.includes('.woff') || url.includes('.ttf') || url.includes('.eot'))) {
+        return "url('')"; // Empty URL to avoid CORS error
+      }
+      
+      // Keep other external URLs as-is
+      if (url.startsWith('http')) {
+        return match;
+      }
+      
+      // Convert relative URLs to absolute
       try {
         const absoluteUrl = new URL(url, baseUrl).href;
         return `url('${absoluteUrl}')`;
@@ -286,5 +302,63 @@ export class ResourceCloner {
         return match;
       }
     });
+  }
+
+  /**
+   * Resolve CSS custom properties (CSS variables)
+   * Removes undefined var() references or extracts fallback values
+   */
+  private resolveCSSCustomProperties(css: string): string {
+    // First, collect all :root variable definitions
+    const rootVars = new Map<string, string>();
+    const rootMatch = css.match(/:root\s*\{[^}]+\}/gs);
+    
+    if (rootMatch) {
+      rootMatch.forEach(block => {
+        const varMatches = block.matchAll(/(--[a-zA-Z0-9-]+)\s*:\s*([^;]+);/g);
+        for (const match of varMatches) {
+          rootVars.set(match[1], match[2].trim());
+        }
+      });
+    }
+
+    // Now replace all var() usages
+    let result = css.replace(/var\s*\(\s*(--[a-zA-Z0-9-]+)(?:\s*,\s*([^)]+))?\s*\)/g, (match, varName, fallback) => {
+      // If there's a fallback value, use it
+      if (fallback) {
+        return fallback.trim();
+      }
+      
+      // Check if variable is defined in :root
+      if (rootVars.has(varName)) {
+        return rootVars.get(varName)!;
+      }
+      
+      // Default fallback values for common patterns
+      if (varName.includes('color') || varName.includes('Color')) {
+        return 'currentColor';
+      }
+      if (varName.includes('font') || varName.includes('Font')) {
+        return 'inherit';
+      }
+      if (varName.includes('spacing') || varName.includes('margin') || varName.includes('padding')) {
+        return '0';
+      }
+      if (varName.includes('width') || varName.includes('Width') || varName.includes('height') || varName.includes('Height')) {
+        return 'auto';
+      }
+      if (varName.includes('opacity') || varName.includes('Opacity')) {
+        return '1';
+      }
+      
+      // Last resort: return inherit
+      return 'inherit';
+    });
+
+    // Clean up orphaned values (single words between semicolons that aren't property: value pairs)
+    // This fixes cases like "position: absolute; center; bottom: 0"
+    result = result.replace(/;\s*([a-z-]+)\s*;/g, ';');
+    
+    return result;
   }
 }

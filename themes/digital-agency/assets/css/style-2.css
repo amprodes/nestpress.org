@@ -1,0 +1,52 @@
+/* Recent Posts */
+.swm-widget-content .mk-recent-posts-tiny ul { margin:0; padding:0; }
+.swm-widget-content .mk-recent-posts-tiny li { list-style: none; clear: both; }
+.swm-widget-content .mk-recent-posts-tiny ul li a img { margin: 0 20px 0 0; max-width: 120px; }
+.swm-widget-content .mk-recent-posts-tiny ul li { padding: 0; height: auto; clear: both; background: none; margin: 0 0 5px 0; display: flex; align-items: center; }
+.mk-recent-posts-tiny ul li:last-child { margin: 0; }
+.mk-recent-posts-tiny ul li a { text-decoration: none; }
+.mk-recent-posts-tiny-content h5 { margin: 0 0 7px 0; }
+.mk-recent-posts-tiny-title { line-height: normal; margin: 0; text-decoration: none; }
+.footer .mk-recent-posts-tiny ul li { padding-bottom: 15px; }
+.sidebar .mk-recent-posts-tiny ul li { padding-bottom: 15px; }
+.sidebar .mk-recent-posts-tiny ul li:last-child { padding-bottom: 0; }
+.mk-recent-posts-tiny .mk-recent-posts-tiny-title h5 { font-size:inherit; }
+.mk-recent-posts-tiny-title { margin-top: 3px; }
+.mk-tiny-post-meta { margin-bottom:8px; text-transform:uppercase; font-size:15px; }
+.mk-tiny-post-meta>* { line-height: 1; display: inline-flex; vertical-align: middle; flex-wrap: wrap; color:currentColor; }
+.mk-tiny-post-meta a,.mk-tiny-post-meta a:hover { position: relative; color:inherit; }
+.mk-tiny-post-meta-separator { color: initial; color:currentColor; }
+.mk-tiny-post-meta-separator:after { content: '/'; margin: 0 10px 0 10px; }
+.mk-tiny-post-meta-cat-separator:after { content: ','; margin-right: 5px; }
+.mk-tiny-post-meta-separator:last-of-type { display: none; }
+.mk-tiny-post-title { font-weight:500; line-height:27px; }
+
+/* Social Icons Widget */
+.widget_social { margin-bottom: -8px; }
+.swm-widget-content .mk-sm-wid-icons ul { padding: 0; margin: 6px 0 0 0; display: block; text-align: center; }
+.swm-widget-content .mk-sm-wid-icons ul li { display: inline-block; margin: 0 8px 8px 0; padding: 0; border: 0; overflow: hidden; float: left; }
+.swm-widget-content .mk-sm-wid-icons ul li a { display: inline-block; width: 40px; height: 40px; line-height: 40px; overflow: hidden; text-align: center; color: currentColor; border: 1px solid currentColor; border-radius: 100%; background: transparent; font-size: 15px; }
+.swm-widget-content .mk-sm-wid-icons ul li:hover a { background: currentColor; color: currentColor; border-color: currentColor; }
+.footer .swm-widget-content .mk-sm-wid-icons ul li a { background:transparent; color: currentColor; }
+.footer .swm-widget-content .mk-sm-wid-icons ul li a:hover { color: currentColor; background: currentColor; }
+.mk-recent-posts-tiny-meta { color:currentColor; }
+
+/* General */
+.swm-site-content .elementor-widget-wp-widget-mk_social h5,
+.swm-site-content .elementor-widget-wp-widget-mk_recent_posts_wid h5 { margin-bottom: 20px; }
+
+/* About Author */
+.swm-site-content .mk-about-author-widget h4,
+.footer .mk-about-author-widget h4 { font-size:36px; font-weight:500; margin:0 0 15px 0; color: currentColor; }
+.mk-about-author-widget .mk-widget-author-sm-icons ul { padding: 0; margin: 15px 0 -8px 0; display: flex; justify-content: center; align-content: center; }
+.mk-about-author-widget .mk-widget-author-sm-icons ul li { display: inline-block; margin: 0 8px 8px 8px; padding: 0; border: 0; overflow: hidden; }
+.mk-about-author-widget .mk-widget-author-sm-icons ul li a { display: inline-block; overflow: hidden; text-align: center; font-size: 15px; line-height: 1; }
+.mk-about-author-widget.left { text-align: left; }
+.mk-about-author-widget.left .mk-widget-author-sm-icons ul { justify-content: flex-start; }
+.mk-about-author-widget.left .mk-widget-author-sm-icons ul li { margin: 0 16px 0 0; }
+.mk-about-author-widget.right .mk-widget-author-sm-icons ul li { margin: 0  0 0 16px; }
+.mk-about-author-widget.right { text-align: right; }
+.mk-about-author-widget.right .mk-widget-author-sm-icons ul { justify-content: flex-end; }
+.mk-about-author-widget-img { display: block; margin-bottom: 28px; overflow:hidden; }
+p.autor_position { margin:-3px 0 10px 0; }
+.mk-about-author-widget p:last-child { margin-bottom:0; }

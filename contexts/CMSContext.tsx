@@ -230,14 +230,15 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!apiPost) {
       throw new Error('Cannot map null/undefined API response');
     }
+    
+    // Map directly without WordPress helper functions to avoid dependencies
     return {
-      id: apiPost.id || apiPost._id || Date.now().toString(),
-      title: apiPost.title || '(Untitled)',
+      id: apiPost.id || apiPost._id || '',
+      title: apiPost.title || '',
       slug: apiPost.slug || '',
       content: apiPost.content || '',
-      author: apiPost.author?.name || apiPost.authorName || 'Unknown',
-      status: apiPost.status === 'published' ? PostStatus.PUBLISHED : 
-              apiPost.status === 'draft' ? PostStatus.DRAFT : PostStatus.TRASH,
+      author: apiPost.author || 'Unknown',
+      status: apiPost.status || 'draft',
       categories: apiPost.categories || [],
       tags: apiPost.tags || [],
       date: apiPost.createdAt || apiPost.date || new Date().toISOString(),
@@ -317,8 +318,11 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Fetch all data from API
   const fetchData = useCallback(async () => {
+    console.log('[CMSContext] Starting fetchData...');
+    
     // Check if user is authenticated
     if (!tokenManager.isAuthenticated()) {
+      console.warn('[CMSContext] No auth token found');
       setApiStatus('offline');
       setIsLoading(false);
       setError('Not authenticated. Please log in.');
@@ -329,16 +333,20 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setError(null);
 
     try {
+      console.log('[CMSContext] Checking backend health...');
       // Check API health
       const isApiAvailable = await healthApi.checkApi();
       
       if (!isApiAvailable) {
+        console.error('[CMSContext] Backend health check failed!');
+        console.error('   Expected backend at: ' + (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'));
         setApiStatus('offline');
-        setError('API server is not available. Please ensure the backend is running.');
+        setError('Backend API is not available. Please ensure the backend server is running on port 4000.');
         setIsLoading(false);
         return;
       }
 
+      console.log('[CMSContext] Backend is healthy, loading data...');
       setApiStatus('connected');
 
       // Load data from API in parallel

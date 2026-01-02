@@ -223,16 +223,19 @@ export function useTheme(themeIdOverride?: string) {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<Error | null>(null);
   const [currentThemeId, setCurrentThemeId] = React.useState<string | null>(null);
+  
+  // Use ref to track current theme without triggering re-renders
+  const currentThemeIdRef = React.useRef<string | null>(null);
 
-  // Load theme function - defined before useEffect to avoid stale closure
+  // Load theme function - use ref instead of state in dependencies
   const loadTheme = React.useCallback(async (slug: string, forceReload: boolean = false) => {
     try {
       setLoading(true);
       setError(null);
       
       // Clear cache if loading a different theme to ensure fresh load
-      if (forceReload || (currentThemeId && currentThemeId !== slug)) {
-        console.log(`🔄 Clearing theme cache for switch from "${currentThemeId}" to "${slug}"`);
+      if (forceReload || (currentThemeIdRef.current && currentThemeIdRef.current !== slug)) {
+        console.log(`🔄 Clearing theme cache for switch from "${currentThemeIdRef.current}" to "${slug}"`);
         themeLoader.clearCache();
       }
       
@@ -240,6 +243,7 @@ export function useTheme(themeIdOverride?: string) {
       themeLoader.setActiveTheme(slug);
       setTheme(loadedTheme);
       setCurrentThemeId(slug);
+      currentThemeIdRef.current = slug;
       console.log(`🎨 Theme switched to: ${slug}`, loadedTheme.metadata?.name);
     } catch (err) {
       setError(err as Error);
@@ -253,6 +257,7 @@ export function useTheme(themeIdOverride?: string) {
           const defaultTheme = await themeLoader.loadTheme('default');
           setTheme(defaultTheme);
           setCurrentThemeId('default');
+          currentThemeIdRef.current = 'default';
         } catch {
           // Default also failed
         }
@@ -260,16 +265,16 @@ export function useTheme(themeIdOverride?: string) {
     } finally {
       setLoading(false);
     }
-  }, [currentThemeId]);
+  }, []); // Empty deps - use ref to track current theme
 
   // Load theme when themeIdOverride changes
   React.useEffect(() => {
     const themeToLoad = themeIdOverride || themeLoader.getActiveThemeSlug();
     
-    console.log(`🔍 Theme effect triggered: requested="${themeToLoad}", current="${currentThemeId}"`);
+    console.log(`🔍 Theme effect triggered: requested="${themeToLoad}", current="${currentThemeIdRef.current}"`);
     
     // Always reload if theme actually changed
-    if (themeToLoad !== currentThemeId) {
+    if (themeToLoad !== currentThemeIdRef.current) {
       loadTheme(themeToLoad, true);
     }
   }, [themeIdOverride, loadTheme]);
@@ -279,11 +284,11 @@ export function useTheme(themeIdOverride?: string) {
   }, [loadTheme]);
 
   const reloadTheme = React.useCallback(async () => {
-    if (!currentThemeId) return;
+    if (!currentThemeIdRef.current) return;
     try {
       setLoading(true);
       themeLoader.clearCache();
-      const reloaded = await themeLoader.loadTheme(currentThemeId);
+      const reloaded = await themeLoader.loadTheme(currentThemeIdRef.current);
       setTheme(reloaded);
     } catch (err) {
       setError(err as Error);
@@ -291,7 +296,7 @@ export function useTheme(themeIdOverride?: string) {
     } finally {
       setLoading(false);
     }
-  }, [currentThemeId]);
+  }, []); // Empty deps - use ref
 
   return {
     theme,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCMS } from '../../contexts/CMSContext';
 import { Post, PostStatus, Menu, Widget, HeaderSettings } from '../../types';
 import { useTheme } from '../../utils/themeLoader';
@@ -131,16 +131,18 @@ const getPageSlugFromUrl = (): string => {
 
 // Find page by slug
 const findPageBySlug = (pages: Post[], slug: string): Post | undefined => {
-  const normalizedSlug = slug.toLowerCase().replace(/[-_]/g, ' ');
+  const normalizedSlug = slug.toLowerCase().replace(/[-_]/g, ' ').trim();
   
   return pages.find(page => {
-    const pageTitle = page.title.toLowerCase();
-    const pageSlug = pageTitle.replace(/\s+/g, '-');
+    const pageTitle = page.title.toLowerCase().trim();
+    const pageTitleAsSlug = pageTitle.replace(/\s+/g, '-');
+    const pageSlug = page.slug?.toLowerCase();
     
     return (
-      pageTitle === normalizedSlug ||
-      pageSlug === slug ||
-      pageTitle.replace(/\s+/g, '') === normalizedSlug.replace(/\s+/g, '')
+      pageTitle === normalizedSlug ||           // "shop" === "shop"
+      pageTitleAsSlug === slug.toLowerCase() || // "shop" === "shop"
+      pageTitle === slug.toLowerCase() ||       // "shop" === "shop"
+      pageSlug === slug.toLowerCase()           // Use page.slug if exists
     );
   });
 };
@@ -166,6 +168,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
   const [currentPageSlug, setCurrentPageSlug] = useState<string>(getPageSlugFromUrl());
   const [publicPages, setPublicPages] = useState<Post[]>([]);
   const [publicPosts, setPublicPosts] = useState<Post[]>([]);
+  const [publicProducts, setPublicProducts] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [pluginAssets, setPluginAssets] = useState<{ styles: any[]; scripts: any[] }>({ styles: [], scripts: [] });
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -200,6 +203,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
           const mappedPages = (Array.isArray(pagesData) ? pagesData : pagesData.data || []).map((page: any) => ({
             id: page.id,
             title: page.title,
+            slug: page.slug,
             content: page.content,
             author: page.author?.name || 'Admin',
             status: PostStatus.PUBLISHED,
@@ -230,6 +234,16 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
             featuredImage: post.featuredImage || '',
           }));
           setPublicPosts(mappedPosts);
+        }
+
+        // Fetch products
+        const productsResponse = await fetch('http://localhost:4000/api/v1/products?limit=100');
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          console.log('Products API response:', productsData);
+          const products = Array.isArray(productsData) ? productsData : productsData.data || [];
+          console.log('Extracted products:', products);
+          setPublicProducts(products);
         }
 
         // Fetch site settings (for homepage type, posts per page, etc.)
@@ -292,23 +306,27 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
   const currentThemeId = themeId || activeThemeId;
   const theme = themes.find(t => t.id === currentThemeId) || themes[0];
 
-  // Get available pages and posts
-  const availablePages = publicPages.length > 0 
-    ? publicPages
-    : cmsPages.length > 0
-      ? cmsPages.filter(p => p.status === PostStatus.PUBLISHED && p.type === 'page')
-      : createDefaultPages();
+  // Memoize available pages and posts to prevent infinite loops
+  const availablePages = useMemo(() => {
+    return publicPages.length > 0 
+      ? publicPages
+      : cmsPages.length > 0
+        ? cmsPages.filter(p => p.status === PostStatus.PUBLISHED && p.type === 'page')
+        : createDefaultPages();
+  }, [publicPages, cmsPages]);
 
-  const publishedPosts = publicPosts.length > 0 
-    ? publicPosts 
-    : cmsPosts.filter(p => p.status === PostStatus.PUBLISHED);
+  const publishedPosts = useMemo(() => {
+    return publicPosts.length > 0 
+      ? publicPosts 
+      : cmsPosts.filter(p => p.status === PostStatus.PUBLISHED);
+  }, [publicPosts, cmsPosts]);
 
-  // Get current page based on slug or preview
-  const currentPage = previewPageId
-    ? availablePages.find(p => p.id === previewPageId)
-    : findPageBySlug(availablePages, currentPageSlug) || availablePages.find(p => 
-        p.title.toLowerCase() === 'home' || p.title.toLowerCase() === 'front-page'
-      );
+  // Memoize current page to prevent infinite loops
+  const currentPage = useMemo(() => {
+    return previewPageId
+      ? availablePages.find(p => p.id === previewPageId)
+      : findPageBySlug(availablePages, currentPageSlug);
+  }, [availablePages, currentPageSlug, previewPageId]);
 
   // Handle browser navigation
   useEffect(() => {
@@ -333,7 +351,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('navigate', handleNavigate as EventListener);
     };
-  }, [availablePages]);
+  }, []); // Empty deps - availablePages is captured in closure
 
   // WordPress-like wp_head hook - inject assets and run head actions
   useEffect(() => {
@@ -442,7 +460,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       themeScriptElements.forEach(el => el.remove());
       scriptElements.forEach(el => el.remove());
     };
-  }, [pluginAssets, doAction, effectiveThemeId, currentPage, loadedTheme]);
+  }, [pluginAssets, effectiveThemeId, currentPage, loadedTheme]); // Removed doAction - it's stable
 
   // WordPress-like wp_footer hook - run footer actions before </body>
   useEffect(() => {
@@ -452,7 +470,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       page: currentPage,
       route: window.location.pathname,
     });
-  }, [doAction, effectiveThemeId, currentPage]);
+  }, [effectiveThemeId, currentPage]); // Removed doAction - it's stable
 
   // WordPress-like body_class filter - apply body classes
   useEffect(() => {
@@ -470,7 +488,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       page: currentPage,
       route,
     });
-  }, [currentPage, effectiveThemeId, applyFilters, doAction]);
+  }, [currentPage, effectiveThemeId]); // Removed doAction and applyFilters - they're stable
 
   // Handle hash changes (for SPA navigation)
   useEffect(() => {
@@ -485,8 +503,8 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Show loading while fetching theme or data
-  if (themeLoading || (isLoadingData && publicPages.length === 0 && publicPosts.length === 0)) {
+  // Show loading while fetching theme or initial data
+  if (themeLoading || isLoadingData) {
     return (
       <div style={{ 
         minHeight: '100vh', 
@@ -505,7 +523,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
             animation: 'spin 1s linear infinite',
             margin: '0 auto 16px',
           }} />
-          <p style={{ color: '#64748b' }}>Loading theme...</p>
+          <p style={{ color: '#64748b' }}>Loading...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -633,9 +651,45 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     templateName = loadedTheme.templates['search'] ? 'search' : 'archive';
     templateProps = { posts: searchResults, searchQuery: query, ...appearanceProps };
   } else if (currentPage) {
-    // Static page
-    templateName = 'page';
-    templateProps = { post: currentPage, page: currentPage, ...appearanceProps };
+    // Check if this is the Shop page (WooCommerce-like)
+    if (currentPage.title.toLowerCase() === 'shop') {
+      templateName = 'shop';
+      templateProps = { 
+        page: currentPage, 
+        products: publicProducts, 
+        ...appearanceProps 
+      };
+    } else if (currentPage.title.toLowerCase() === 'cart') {
+      // Cart page
+      templateName = 'cart';
+      templateProps = { 
+        page: currentPage,
+        ...appearanceProps 
+      };
+    } else {
+      // Regular static page
+      templateName = 'page';
+      templateProps = { post: currentPage, page: currentPage, ...appearanceProps };
+    }
+  } else if (currentPageSlug === 'home' || !currentPageSlug) {
+    // Home page fallback - try to find home page
+    const homePage = availablePages.find(p => 
+      p.title.toLowerCase() === 'home' || 
+      p.title.toLowerCase() === 'front-page' ||
+      p.slug === 'home'
+    );
+    if (homePage) {
+      templateName = 'page';
+      templateProps = { post: homePage, page: homePage, ...appearanceProps };
+    } else {
+      // No home page found, show blog archive
+      templateName = loadedTheme.templates['front-page'] ? 'front-page' 
+                   : loadedTheme.templates['archive'] ? 'archive' 
+                   : 'index';
+      const postsLimit = siteSettings.postsPerPage || 10;
+      const limitedPosts = publishedPosts.slice(0, postsLimit);
+      templateProps = { posts: limitedPosts, allPosts: publishedPosts, ...appearanceProps };
+    }
   } else {
     // 404 Not Found
     templateName = loadedTheme.templates['404'] ? '404' : 'index';
@@ -643,7 +697,10 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
   }
 
   // Get template component from loaded theme
-  const TemplateComponent = loadedTheme.templates[templateName] || loadedTheme.templates['index'];
+  // Fallback to 'page' template for shop/cart if they don't have custom templates
+  const TemplateComponent = loadedTheme.templates[templateName] 
+    || (['shop', 'cart'].includes(templateName) ? loadedTheme.templates['page'] : null)
+    || loadedTheme.templates['index'];
 
   if (!TemplateComponent) {
     return (
