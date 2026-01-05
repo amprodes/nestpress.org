@@ -294,13 +294,51 @@ const Settings: React.FC = () => {
   );
 
   // Reading Settings Tab
+  // Reading Settings Tab with WordPress-compliant validation
   const renderReadingTab = () => {
     const { pages } = useCMS();
-    const publishedPages = pages.filter(p => p.status === 'Published');
+    // Get published pages (case-insensitive to handle both 'Published' and 'published' from API)
+    const publishedPages = pages.filter(p => p.status?.toLowerCase() === 'published');
+    
+    // WordPress-style client-side validation
+    const validateReadingSettings = (): boolean => {
+      if (localSettings.homepageType === 'page') {
+        if (!localSettings.homepageId) {
+          showToast('Please select a homepage when using a static front page', 'error');
+          return false;
+        }
+        
+        // WordPress validates: homepage and posts page cannot be the same
+        if (localSettings.homepageId === localSettings.postsPageId && localSettings.postsPageId) {
+          showToast('Homepage and posts page cannot be the same page', 'error');
+          return false;
+        }
+      }
+      
+      // Validate posts per page range (WordPress allows 1-100)
+      const postsPerPage = localSettings.postsPerPage || 10;
+      if (postsPerPage < 1 || postsPerPage > 100) {
+        showToast('Blog pages must show between 1 and 100 posts', 'error');
+        return false;
+      }
+      
+      return true;
+    };
+    
+    const handleReadingSave = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      // WordPress-style pre-submit validation
+      if (!validateReadingSettings()) {
+        return;
+      }
+      
+      await handleSave();
+    };
     
     return (
       <div className="max-w-4xl">
-        <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+        <form className="space-y-6" onSubmit={handleReadingSave}>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
             <label className="text-sm font-semibold text-gray-700 md:text-right pt-2">Your homepage displays</label>
             <div className="md:col-span-3">
@@ -329,32 +367,66 @@ const Settings: React.FC = () => {
                       <div>
                         <label className="text-xs text-gray-600 mr-2">Homepage:</label>
                         <select 
-                          className="border border-gray-400 rounded px-2 py-1 text-xs"
+                          className={`border rounded px-2 py-1 text-xs ${
+                            localSettings.homepageType !== 'page' 
+                              ? 'border-gray-300 bg-gray-50 cursor-not-allowed' 
+                              : 'border-gray-400'
+                          }`}
                           value={localSettings.homepageId || ''}
                           onChange={(e) => updateLocalSettings({ homepageId: e.target.value })}
                           disabled={localSettings.homepageType !== 'page'}
+                          required={localSettings.homepageType === 'page'}
                         >
                           <option value="">— Select —</option>
                           {publishedPages.map(page => (
-                            <option key={page.id} value={page.id}>{page.title}</option>
+                            <option 
+                              key={page.id} 
+                              value={page.id}
+                              disabled={page.id === localSettings.postsPageId}
+                            >
+                              {page.title}
+                              {page.id === localSettings.postsPageId ? ' (Currently set as Posts page)' : ''}
+                            </option>
                           ))}
                         </select>
+                        {localSettings.homepageType === 'page' && !localSettings.homepageId && (
+                          <p className="mt-1 text-xs text-amber-600">⚠️ Homepage selection required</p>
+                        )}
                       </div>
                       <div>
                         <label className="text-xs text-gray-600 mr-2">Posts page:</label>
                         <select 
-                          className="border border-gray-400 rounded px-2 py-1 text-xs"
+                          className={`border rounded px-2 py-1 text-xs ${
+                            localSettings.homepageType !== 'page' 
+                              ? 'border-gray-300 bg-gray-50 cursor-not-allowed' 
+                              : 'border-gray-400'
+                          }`}
                           value={localSettings.postsPageId || ''}
                           onChange={(e) => updateLocalSettings({ postsPageId: e.target.value })}
                           disabled={localSettings.homepageType !== 'page'}
                         >
                           <option value="">— Select —</option>
                           {publishedPages.map(page => (
-                            <option key={page.id} value={page.id}>{page.title}</option>
+                            <option 
+                              key={page.id} 
+                              value={page.id}
+                              disabled={page.id === localSettings.homepageId}
+                            >
+                              {page.title}
+                              {page.id === localSettings.homepageId ? ' (Currently set as Homepage)' : ''}
+                            </option>
                           ))}
                         </select>
+                        {localSettings.homepageId === localSettings.postsPageId && localSettings.postsPageId && (
+                          <p className="mt-1 text-xs text-red-600">❌ Cannot be the same as homepage</p>
+                        )}
                       </div>
                     </div>
+                    {publishedPages.length === 0 && (
+                      <p className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                        ℹ️ You need to create at least one page to use this feature. <a href="#" className="underline hover:text-amber-800">Create a page</a>
+                      </p>
+                    )}
                   </div>
                 </label>
               </div>
@@ -367,12 +439,27 @@ const Settings: React.FC = () => {
               <div className="flex items-center gap-2">
                 <input 
                   type="number" 
+                  min="1"
+                  max="100"
                   value={localSettings.postsPerPage || 10}
-                  onChange={(e) => updateLocalSettings({ postsPerPage: parseInt(e.target.value) || 10 })}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 10;
+                    // WordPress-style absint validation with bounds
+                    updateLocalSettings({ postsPerPage: Math.max(1, Math.min(100, val)) });
+                  }}
+                  onBlur={(e) => {
+                    // Ensure valid value on blur (WordPress behavior)
+                    const val = parseInt(e.target.value) || 10;
+                    if (val < 1 || val > 100) {
+                      updateLocalSettings({ postsPerPage: val < 1 ? 1 : 100 });
+                    }
+                  }}
                   className="w-20 px-3 py-2 border border-gray-400 rounded text-sm" 
+                  required
                 />
                 <span className="text-sm text-gray-600">posts</span>
               </div>
+              <p className="mt-1 text-xs text-gray-500">Range: 1-100 posts per page</p>
             </div>
           </div>
 
@@ -382,9 +469,23 @@ const Settings: React.FC = () => {
               <div className="flex items-center gap-2">
                 <input 
                   type="number" 
+                  min="1"
+                  max="50"
                   value={localSettings.feedItemsCount || 10}
-                  onChange={(e) => updateLocalSettings({ feedItemsCount: parseInt(e.target.value) || 10 })}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 10;
+                    // WordPress-style absint validation with bounds
+                    updateLocalSettings({ feedItemsCount: Math.max(1, Math.min(50, val)) });
+                  }}
+                  onBlur={(e) => {
+                    // Ensure valid value on blur
+                    const val = parseInt(e.target.value) || 10;
+                    if (val < 1 || val > 50) {
+                      updateLocalSettings({ feedItemsCount: val < 1 ? 1 : 50 });
+                    }
+                  }}
                   className="w-20 px-3 py-2 border border-gray-400 rounded text-sm" 
+                  required
                 />
                 <span className="text-sm text-gray-600">items</span>
               </div>

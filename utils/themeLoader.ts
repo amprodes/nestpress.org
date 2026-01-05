@@ -2,9 +2,13 @@
  * Dynamic Theme Loader
  * Loads themes from /themes folder at runtime
  * Supports hot-swapping without rebuild
+ * 
+ * NOTE: Templates are now .html files (WordPress block markup)
+ * They are loaded and parsed at runtime using wordpress-block-renderer.tsx
  */
 
 import React, { ComponentType } from 'react';
+import { renderTemplate } from './wordpress-block-renderer';
 
 export interface ThemeMetadata {
   name: string;
@@ -35,6 +39,10 @@ export interface ThemeMetadata {
   };
   // WordPress theme.json fields
   $schema?: string;
+  assets?: { // WordPress theme assets
+    css?: string[];
+    js?: string[];
+  };
 }
 
 export interface LoadedTheme {
@@ -44,11 +52,66 @@ export interface LoadedTheme {
     css?: string[];
     js?: string[];
   };
+  // WordPress theme functions
+  functions?: {
+    enqueueAssets?: () => { styles: any[]; scripts: any[] };
+    themeSetup?: () => any;
+    blockStyles?: Record<string, Array<{ name: string; label: string; inlineStyle?: string }>>;
+    patternCategories?: Array<{ name: string; label: string }>;
+    blockBindings?: Record<string, any>;
+    applyBlockStyles?: () => void;
+  };
 }
 
 class ThemeLoader {
   private loadedThemes: Map<string, LoadedTheme> = new Map();
   private activeThemeSlug: string | null = null;
+  private templateHTMLCache: Map<string, string> = new Map(); // Cache loaded HTML templates
+
+  /**
+   * Load HTML template and create React component wrapper
+   */
+  private async loadHTMLTemplate(slug: string, templateName: string): Promise<ComponentType<any>> {
+    const cacheKey = `${slug}/${templateName}`;
+    
+    try {
+      // Try to load .html template first (new WordPress-compatible approach)
+      const htmlPath = `/themes/${slug}/templates/${templateName}.html`;
+      
+      const htmlResponse = await fetch(htmlPath);
+      if (htmlResponse.ok) {
+        const templateHTML = await htmlResponse.text();
+        
+        // CRITICAL: Validate HTML before caching
+        if (!templateHTML.includes('<!-- wp:')) {
+          throw new Error(`Template ${templateName} is not valid WordPress block HTML`);
+        }
+        
+        this.templateHTMLCache.set(cacheKey, templateHTML);
+        
+        // Return React component that renders the HTML template
+        // Store HTML in variable accessible to closure
+        const capturedHTML = templateHTML;
+        
+        return (props: any) => {
+          return renderTemplate(capturedHTML, {
+            post: props.post || props.page,
+            posts: props.posts,
+            primaryMenu: props.primaryMenu,
+            footerMenu: props.footerMenu,
+            widgets: props.widgets,
+            header: props.header,
+            data: props.data,
+          }) as any;
+        };
+      }
+      
+      // Template not found - throw error (no TSX fallback - all themes use HTML templates now)
+      throw new Error(`Template ${templateName} not found`);
+    } catch (error) {
+      throw error;
+    }
+  }
 
   /**
    * Load a theme from /themes/{slug}
@@ -67,67 +130,63 @@ class ThemeLoader {
       }
       const metadata: ThemeMetadata = await metadataResponse.json();
 
-      // Dynamically import theme entry point
-      const themeModule = await import(
-        /* @vite-ignore */
-        `/themes/${slug}/index.tsx`
-      );
-
-      // Extract template components
+      // Load template components (as React wrappers around HTML)
       const templates: Record<string, ComponentType<any>> = {};
       
-      // Get template list - prioritize old format for compatibility
-      // For WordPress customTemplates, they're optional variations, not required
+      // Get template list - core WordPress templates
+      // Note: 'category' removed as WordPress uses 'archive' as fallback
       const baseTemplateList = metadata.templates || 
-        ['index', 'single', 'page', 'archive', 'category', 'search', '404']; // Core templates
+        ['index', 'single', 'page', 'archive', 'search', '404', 'home'];
       
       // Add custom templates from WordPress format (optional)
       const customTemplateList = metadata.customTemplates?.map(t => t.name) || [];
       const allTemplates = [...baseTemplateList, ...customTemplateList];
       
+      // Load templates (HTML or TSX)
       for (const templateName of allTemplates) {
-        // Convert template name to component name
-        let componentName: string;
-        if (templateName === '404') {
-          componentName = 'NotFoundTemplate';
-        } else if (templateName === 'front-page') {
-          componentName = 'FrontPageTemplate';
-        } else {
-          // Handle hyphenated names: page-with-sidebar → PageWithSidebarTemplate
-          const pascalCase = templateName
-            .split('-')
-            .map(part => this.capitalize(part))
-            .join('');
-          componentName = `${pascalCase}Template`;
-        }
-        
-        // Try to load the template component
-        if (themeModule[componentName]) {
-          templates[templateName] = themeModule[componentName];
-        } else {
+        try {
+          const templateComponent = await this.loadHTMLTemplate(slug, templateName);
+          templates[templateName] = templateComponent;
+        } catch (error) {
           // Only warn for core templates, custom templates are optional
           if (baseTemplateList.includes(templateName)) {
-            console.warn(`⚠️ Theme "${slug}" missing core template: ${componentName}`);
           }
         }
       }
 
+      // Theme functions are now loaded from theme.json assets field
+      // WordPress block themes don't require functions.php - they use theme.json
+      // Dynamic imports don't work with Vite for runtime-variable paths
+      const themeFunctions = {
+        // Create enqueueAssets from theme.json assets field
+        enqueueAssets: metadata.assets ? () => ({
+          styles: (metadata.assets?.css || []).map((css: string) => ({
+            handle: css.split('/').pop()?.replace('.css', '') || 'theme-style',
+            src: `/themes/${slug}/${css}`,
+          })),
+          scripts: (metadata.assets?.js || []).map((js: string) => ({
+            handle: js.split('/').pop()?.replace('.js', '') || 'theme-script',
+            src: `/themes/${slug}/${js}`,
+          })),
+        }) : undefined,
+        themeSetup: undefined,
+        blockStyles: undefined,
+        patternCategories: undefined,
+        blockBindings: undefined,
+        applyBlockStyles: undefined,
+      };
+
       const loadedTheme: LoadedTheme = {
         metadata,
         templates,
-        assets: (metadata as any).assets, // Extract assets from theme.json
+        assets: metadata.assets,
+        functions: themeFunctions,
       };
 
       // Cache the loaded theme
       this.loadedThemes.set(slug, loadedTheme);
-
-      console.log(`✅ Theme loaded: ${metadata.name} v${metadata.version}`, {
-        hasAssets: !!(metadata as any).assets,
-        cssFiles: (metadata as any).assets?.css
-      });
       return loadedTheme;
     } catch (error) {
-      console.error(`❌ Failed to load theme "${slug}":`, error);
       throw error;
     }
   }
@@ -148,17 +207,18 @@ class ThemeLoader {
       // Fallback: return default theme
       return ['default'];
     } catch (error) {
-      console.error('Failed to discover themes:', error);
       return ['default'];
     }
   }
 
   /**
-   * Set active theme
+   * Set active theme (memory only - use backend API to persist)
    */
   setActiveTheme(slug: string) {
     this.activeThemeSlug = slug;
-    localStorage.setItem('active_theme', slug);
+    // REMOVED: localStorage.setItem('active_theme', slug);
+    // WordPress stores active theme in database (wp_options: 'template' and 'stylesheet')
+    // NestPress uses backend API: POST /themes/:id/activate
   }
 
   /**
@@ -172,13 +232,12 @@ class ThemeLoader {
   }
 
   /**
-   * Get active theme slug
+   * Get active theme slug (from memory - should be set by CMSContext from backend)
    */
   getActiveThemeSlug(): string {
-    if (!this.activeThemeSlug) {
-      this.activeThemeSlug = localStorage.getItem('active_theme') || 'default';
-    }
-    return this.activeThemeSlug;
+    // REMOVED: localStorage.getItem('active_theme')
+    // Active theme is now managed by backend (database) and CMSContext
+    return this.activeThemeSlug || 'default';
   }
 
   /**
@@ -235,7 +294,6 @@ export function useTheme(themeIdOverride?: string) {
       
       // Clear cache if loading a different theme to ensure fresh load
       if (forceReload || (currentThemeIdRef.current && currentThemeIdRef.current !== slug)) {
-        console.log(`🔄 Clearing theme cache for switch from "${currentThemeIdRef.current}" to "${slug}"`);
         themeLoader.clearCache();
       }
       
@@ -244,14 +302,11 @@ export function useTheme(themeIdOverride?: string) {
       setTheme(loadedTheme);
       setCurrentThemeId(slug);
       currentThemeIdRef.current = slug;
-      console.log(`🎨 Theme switched to: ${slug}`, loadedTheme.metadata?.name);
     } catch (err) {
       setError(err as Error);
-      console.error('Failed to load theme:', err);
       
       // Try fallback to default
       if (slug !== 'default') {
-        console.log('Attempting fallback to default theme...');
         try {
           themeLoader.clearCache();
           const defaultTheme = await themeLoader.loadTheme('default');
@@ -271,7 +326,6 @@ export function useTheme(themeIdOverride?: string) {
   React.useEffect(() => {
     const themeToLoad = themeIdOverride || themeLoader.getActiveThemeSlug();
     
-    console.log(`🔍 Theme effect triggered: requested="${themeToLoad}", current="${currentThemeIdRef.current}"`);
     
     // Always reload if theme actually changed
     if (themeToLoad !== currentThemeIdRef.current) {

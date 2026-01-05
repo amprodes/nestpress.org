@@ -30,6 +30,7 @@ import { HooksModule } from './modules/hooks/hooks.module';
 import { AppearanceModule } from './modules/appearance/appearance.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { PluginsModule } from './modules/plugins/plugins.module';
+import { ThemeConverterModule } from './modules/theme-converter/theme-converter.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -86,6 +87,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     AppearanceModule,
     CommentsModule,
     PluginsModule, // WordPress-like plugin system
+    ThemeConverterModule, // WordPress theme to TSX converter
   ],
   providers: [
     // Global rate limiting guard

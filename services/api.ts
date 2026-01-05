@@ -908,7 +908,6 @@ export interface HealthStatus {
 
 export const healthApi = {
   check: async (): Promise<{ status: string; timestamp: string }> => {
-    console.log('[healthApi.check] Checking backend health at:', `${API_BASE_URL}/health`);
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -921,7 +920,6 @@ export const healthApi = {
       });
       clearTimeout(timeoutId);
       
-      console.log('[healthApi.check] Response status:', response.status, response.statusText);
       
       if (!response.ok) {
         throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
@@ -931,14 +929,11 @@ export const healthApi = {
         throw new Error('Empty response from health endpoint');
       }
       const data = JSON.parse(text);
-      console.log('[healthApi.check] Backend is healthy:', data);
       return data;
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.error('[healthApi.check] Request timeout - backend not responding at:', API_BASE_URL);
         throw new Error(`Backend timeout at ${API_BASE_URL}. Is the server running?`);
       }
-      console.error('[healthApi.check] Failed:', error.message);
       throw error;
     }
   },

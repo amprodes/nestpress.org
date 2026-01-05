@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ThemeTemplateProps, Header, Footer } from '../index';
+import { useNestPressHooks } from '../../../hooks/nestpress-hooks.tsx';
 
 /**
  * Single Post Template
@@ -12,20 +13,44 @@ const SingleTemplate: React.FC<ThemeTemplateProps> = ({
   footerWidgets,
   header,
 }) => {
+  const { doAction, applyFilters } = useNestPressHooks();
+  
+  // WordPress hook: template loaded (like WordPress template_redirect)
+  useEffect(() => {
+    doAction('template:single:loaded', { post });
+    
+    return () => {
+      doAction('template:single:unloaded');
+    };
+  }, [post?.id]);
+  
   if (!post) {
     return <div>Post not found</div>;
   }
 
+  // Apply WordPress filter to post title and content
+  const filteredTitle = applyFilters('template:single:post_title', post.title, post);
+  const filteredContent = applyFilters('template:single:post_content', post.content, post);
+
   return (
     <div className="single-template">
+      {/* WordPress hook: template:single:before_header */}
+      {doAction('template:single:before_header')}
+      
       <Header primaryMenu={primaryMenu} header={header} />
+      
+      {/* WordPress hook: template:single:after_header */}
+      {doAction('template:single:after_header')}
+      
+      {/* WordPress hook: template:single:before_content */}
+      {doAction('template:single:before_content', { post })}
       
       <article style={{ maxWidth: '800px', margin: '2rem auto', padding: '0 2rem' }}>
         {/* Featured Image */}
         {post.featuredImage && (
           <img 
             src={post.featuredImage}
-            alt={post.title}
+            alt={filteredTitle}
             style={{
               width: '100%',
               maxHeight: '400px',
@@ -39,7 +64,7 @@ const SingleTemplate: React.FC<ThemeTemplateProps> = ({
         {/* Post Header */}
         <header style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem' }}>
-            {post.title}
+            {filteredTitle}
           </h1>
           <div style={{ 
             display: 'flex', 
@@ -80,7 +105,7 @@ const SingleTemplate: React.FC<ThemeTemplateProps> = ({
             fontSize: '1.1rem',
             color: '#334155'
           }}
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: filteredContent }}
         />
 
         {/* Tags */}
@@ -102,8 +127,17 @@ const SingleTemplate: React.FC<ThemeTemplateProps> = ({
           </footer>
         )}
       </article>
+      
+      {/* WordPress hook: template:single:after_content */}
+      {doAction('template:single:after_content', { post })}
 
-      <SiteFooter footerMenu={footerMenu} footerWidgets={footerWidgets} header={header} />
+      {/* WordPress hook: template:single:before_footer */}
+      {doAction('template:single:before_footer')}
+
+      <Footer footerMenu={footerMenu} footerWidgets={footerWidgets} header={header} />
+      
+      {/* WordPress hook: template:single:after_footer */}
+      {doAction('template:single:after_footer')}
     </div>
   );
 };

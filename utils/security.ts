@@ -142,7 +142,6 @@ export const secureStorage = {
       };
       localStorage.setItem(key, JSON.stringify(item));
     } catch (error) {
-      console.error('SecureStorage set error:', error);
     }
   },
 
@@ -161,7 +160,6 @@ export const secureStorage = {
 
       return item.value as T;
     } catch (error) {
-      console.error('SecureStorage get error:', error);
       return null;
     }
   },
@@ -170,7 +168,6 @@ export const secureStorage = {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error('SecureStorage remove error:', error);
     }
   },
 
@@ -178,7 +175,6 @@ export const secureStorage = {
     try {
       localStorage.clear();
     } catch (error) {
-      console.error('SecureStorage clear error:', error);
     }
   },
 };
@@ -208,7 +204,6 @@ export const safeJSONParse = <T>(json: string, defaultValue: T): T => {
     // Prevent prototype pollution
     if (typeof parsed === 'object' && parsed !== null) {
       if ('__proto__' in parsed || 'constructor' in parsed || 'prototype' in parsed) {
-        console.error('Potential prototype pollution detected');
         return defaultValue;
       }
     }

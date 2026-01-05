@@ -34,8 +34,30 @@ export class SettingsController {
   @ApiBearerAuth('JWT-auth')
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Update site settings (Admin only)' })
+  @ApiOperation({ 
+    summary: 'Update site settings (Admin only)',
+    description: `WordPress-compliant settings update endpoint.
+    
+    Security:
+    - Requires 'manage_options' capability (ADMIN role)
+    - Input sanitized server-side (sanitize_text_field, absint equivalents)
+    - Cross-field validation (e.g., homepage != posts page)
+    - Output escaped by API serialization
+    
+    Reading Settings:
+    - homepageType: 'posts' | 'page' (sanitized enum)
+    - homepageId: string (sanitized, validated exists)
+    - postsPageId: string (sanitized, cannot equal homepageId)
+    - postsPerPage: 1-100 (absint with bounds)
+    - feedItemsCount: 1-50 (absint with bounds)
+    - feedShowSummary: boolean (checkbox)
+    - discourageCrawlers: boolean (checkbox, honors robots.txt request)
+    `
+  })
   updateSettings(@Body() data: Partial<SiteSettings>) {
+    // WordPress equivalent: check_admin_referer() would go here
+    // In NestPress, JWT + RolesGuard provides this security
+    // Controller acts as capability check (current_user_can('manage_options'))
     return this.settingsService.updateSettings(data);
   }
 

@@ -7,6 +7,9 @@
 import React from 'react';
 import { Post, Menu, MenuItem, Widget, HeaderSettings } from '../../types';
 
+// Export WordPress-like theme functions
+export { themeSetup, blockStyles, patternCategories, enqueueAssets, blockBindings, applyBlockStyles } from './functions';
+
 // Export Parts (Reusable Components)
 export { Header } from './parts/Header';
 export { Footer } from './parts/Footer';

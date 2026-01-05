@@ -48,5 +48,12 @@
   "requires": {
     "nestpress": ">=1.0.0",
     "react": ">=19.0.0"
+  },
+  "assets": {
+    "css": [
+      "style.css",
+      "assets/css/global-styles.css"
+    ],
+    "js": []
   }
 }

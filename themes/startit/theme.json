@@ -8,7 +8,15 @@
   "authorUri": "https://nestpress.dev",
   "license": "GPL-2.0-or-later",
   "thumbnail": "/themes/startit/screenshot.svg",
-  "tags": ["saas", "startup", "product", "landing", "modern", "gradient", "tech"],
+  "tags": [
+    "saas",
+    "startup",
+    "product",
+    "landing",
+    "modern",
+    "gradient",
+    "tech"
+  ],
   "requires": "1.0.0",
   "features": {
     "customLogo": true,
@@ -58,5 +66,12 @@
     "category",
     "search",
     "404"
-  ]
+  ],
+  "assets": {
+    "css": [
+      "style.css",
+      "assets/css/global-styles.css"
+    ],
+    "js": []
+  }
 }

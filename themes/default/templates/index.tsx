@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   ThemeTemplateProps, 
   Header, 
@@ -8,6 +8,7 @@ import {
   PostsGrid,
   getPostPermalink 
 } from '../index';
+import { useNestPressHooks } from '../../../hooks/nestpress-hooks';
 
 /**
  * Index Template (Front Page / Home)
@@ -21,6 +22,16 @@ const IndexTemplate: React.FC<ThemeTemplateProps> = ({
   footerWidgets,
   header,
 }) => {
+  const { doAction, applyFilters } = useNestPressHooks();
+
+  // WordPress template hooks
+  useEffect(() => {
+    doAction('template:index:loaded', { posts });
+    return () => {
+      doAction('template:index:unloaded');
+    };
+  }, [posts]);
+
   // Define features for the FeatureGrid pattern
   const features = [
     { icon: '🚀', title: 'Fast & Modern', description: 'Built with React 19 & NestJS for blazing fast performance' },
@@ -33,10 +44,14 @@ const IndexTemplate: React.FC<ThemeTemplateProps> = ({
 
   return (
     <div className="index-template">
+      {/* WordPress hook: template:index:before_header */}
+      {doAction('template:index:before_header')}
+      
       {/* Header Part */}
       <Header primaryMenu={primaryMenu} header={header} />
 
-      
+      {/* WordPress hook: template:index:after_header */}
+      {doAction('template:index:after_header')}
       {/* Hero Banner Pattern */}
       <HeroBanner 
         title="Welcome to NestPress"
@@ -53,6 +68,9 @@ const IndexTemplate: React.FC<ThemeTemplateProps> = ({
       {/* Latest Posts Section */}
       {posts.length > 0 && (
         <section style={{ maxWidth: '1340px', margin: '0 auto', padding: '0 var(--spacing-50, 2rem)' }}>
+          {/* WordPress hook: template:index:before_posts */}
+          {doAction('template:index:before_posts', { posts })}
+          
           <h2 style={{ 
             fontSize: 'clamp(1.75rem, 4vw, 2rem)', 
             marginBottom: 'var(--spacing-50, 2rem)', 
@@ -69,11 +87,20 @@ const IndexTemplate: React.FC<ThemeTemplateProps> = ({
             showMeta={true}
             showFeaturedImage={true}
           />
+          
+          {/* WordPress hook: template:index:after_posts */}
+          {doAction('template:index:after_posts', { posts })}
         </section>
       )}
 
+      {/* WordPress hook: template:index:before_footer */}
+      {doAction('template:index:before_footer')}
+      
       {/* Footer Part */}
       <Footer footerMenu={footerMenu} footerWidgets={footerWidgets} header={header} />
+      
+      {/* WordPress hook: template:index:after_footer */}
+      {doAction('template:index:after_footer')}
     </div>
   );
 };

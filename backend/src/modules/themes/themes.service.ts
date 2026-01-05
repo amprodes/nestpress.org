@@ -139,10 +139,10 @@ export class ThemesService implements OnModuleInit {
 
     if (fs.existsSync(templatesPath)) {
       const files = fs.readdirSync(templatesPath)
-        .filter(f => f.endsWith('.tsx') || f.endsWith('.jsx'));
+        .filter(f => f.endsWith('.tsx') || f.endsWith('.jsx') || f.endsWith('.html'));
 
       for (const file of files) {
-        const name = file.replace(/\.(tsx|jsx)$/, '');
+        const name = file.replace(/\.(tsx|jsx|html)$/, '');
         templates.push({
           name: name.charAt(0).toUpperCase() + name.slice(1),
           file,

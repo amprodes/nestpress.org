@@ -1,0 +1,87 @@
+/**
+ * WordPress Global Styles - NestPress Default Theme
+ * Generated from theme.json settings and styles
+ */
+
+/* CSS Variables (Custom Properties) */
+:root {
+  --wp--preset--color--base: #FFFFFF;
+  --wp--preset--color--contrast: #1e293b;
+  --wp--preset--color--accent-1: #2563eb;
+  --wp--preset--color--accent-2: #7c3aed;
+  --wp--preset--color--accent-3: #f59e0b;
+  --wp--preset--color--accent-4: #64748b;
+  --wp--preset--color--accent-5: #f9fafb;
+  
+  --wp--preset--font-size--small: 0.875rem;
+  --wp--preset--font-size--medium: 1rem;
+  --wp--preset--font-size--large: 1.5rem;
+  --wp--preset--font-size--x-large: 2rem;
+  --wp--preset--font-size--xx-large: 2.5rem;
+  
+  --wp--preset--spacing--20: 0.5rem;
+  --wp--preset--spacing--30: 1rem;
+  --wp--preset--spacing--40: 1.5rem;
+  --wp--preset--spacing--50: 2rem;
+  --wp--preset--spacing--60: 3rem;
+  --wp--preset--spacing--70: 4rem;
+  --wp--preset--spacing--80: 5rem;
+  
+  --wp--style--global--content-size: 650px;
+  --wp--style--global--wide-size: 1200px;
+}
+
+/* WordPress Layout System */
+:where(body) { margin: 0; }
+
+.wp-site-blocks {
+  padding-top: var(--wp--style--root--padding-top);
+  padding-bottom: var(--wp--style--root--padding-bottom);
+}
+
+.has-global-padding {
+  padding-right: var(--wp--style--root--padding-right, 1.5rem);
+  padding-left: var(--wp--style--root--padding-left, 1.5rem);
+}
+
+.has-global-padding > .alignfull {
+  margin-right: calc(var(--wp--style--root--padding-right, 1.5rem) * -1);
+  margin-left: calc(var(--wp--style--root--padding-left, 1.5rem) * -1);
+}
+
+/* Layout Containers */
+.is-layout-constrained > :where(:not(.alignleft):not(.alignright):not(.alignfull)) {
+  max-width: var(--wp--style--global--content-size);
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.is-layout-constrained > .alignwide {
+  max-width: var(--wp--style--global--wide-size);
+}
+
+.is-layout-flex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wp--style--block-gap, 1.5rem);
+}
+
+.is-layout-grid {
+  display: grid;
+  gap: var(--wp--style--block-gap, 1.5rem);
+}
+
+/* Utility Classes */
+.has-base-color { color: var(--wp--preset--color--base) !important; }
+.has-base-background-color { background-color: var(--wp--preset--color--base) !important; }
+.has-contrast-color { color: var(--wp--preset--color--contrast) !important; }
+.has-contrast-background-color { background-color: var(--wp--preset--color--contrast) !important; }
+.has-accent-1-color { color: var(--wp--preset--color--accent-1) !important; }
+.has-accent-1-background-color { background-color: var(--wp--preset--color--accent-1) !important; }
+
+.has-small-font-size { font-size: var(--wp--preset--font-size--small) !important; }
+.has-medium-font-size { font-size: var(--wp--preset--font-size--medium) !important; }
+.has-large-font-size { font-size: var(--wp--preset--font-size--large) !important; }
+.has-x-large-font-size { font-size: var(--wp--preset--font-size--x-large) !important; }
+.has-xx-large-font-size { font-size: var(--wp--preset--font-size--xx-large) !important; }

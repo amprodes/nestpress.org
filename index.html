@@ -4,14 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NestPress CMS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <!-- Tailwind CDN REMOVED - WordPress themes use their own CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" data-admin-only="true">
+    <style id="admin-body-styles" data-admin-only="true">
+      /* Admin-only styles - will be removed on public frontend */
       body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f0f0f1; /* WP Admin Grey */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: #f0f0f1;
       }
-      /* Custom Scrollbar for a cleaner feel */
+      /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;

@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useConfig } from '../../contexts/ConfigContext';
+import { settingsApi } from '../../services/api';
 import DatabaseStep from './steps/DatabaseStep';
 import AIStep from './steps/AIStep';
 import PaymentStep from './steps/PaymentStep';
@@ -250,7 +251,6 @@ const LanguageStep: React.FC = () => {
     setError(null);
     
     try {
-      const { settingsApi } = await import('../../services/api');
       await settingsApi.update({ language: selectedLanguage });
       completeStep('language');
       nextStep();
@@ -350,7 +350,6 @@ const SiteInfoStep: React.FC = () => {
     setError(null);
     
     try {
-      const { settingsApi } = await import('../../services/api');
       await settingsApi.update({
         siteName,
         adminEmail,

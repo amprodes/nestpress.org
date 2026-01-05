@@ -4,6 +4,7 @@ import { Post, PostStatus, Menu, Widget, HeaderSettings } from '../../types';
 import { useTheme } from '../../utils/themeLoader';
 import { api } from '@/services/api';
 import { useNestPressHooks } from '@/hooks/nestpress-hooks.tsx';
+import { generateWordPressThemeCSS } from '@/utils/wordpress-theme-css-generator';
 import './wordpress-template.css';
 
 // ============================================
@@ -88,6 +89,8 @@ interface SiteSettings {
   homepageId?: string;
   postsPageId?: string;
   postsPerPage?: number;
+  siteName?: string;
+  siteDescription?: string;
   [key: string]: any;
 }
 
@@ -156,11 +159,17 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
   isPreview = false,
   previewPageId,
 }) => {
-  const { themes, activeThemeId, pages: cmsPages, posts: cmsPosts } = useCMS();
+  const { themes, activeThemeId: contextThemeId, pages: cmsPages, posts: cmsPosts } = useCMS();
   const { doAction, applyFilters } = useNestPressHooks();
   
-  // Use the provided themeId prop, or fall back to activeThemeId from context
-  const effectiveThemeId = themeId || activeThemeId || 'default';
+  // State for active theme fetched from API (for public frontend)
+  const [fetchedActiveThemeId, setFetchedActiveThemeId] = useState<string | null>(null);
+  
+  // Use the provided themeId prop, or fall back to:
+  // 1. Fetched active theme from API (for public frontend)
+  // 2. Context activeThemeId (for admin preview)
+  // 3. 'default' as last resort
+  const effectiveThemeId = themeId || fetchedActiveThemeId || contextThemeId || 'default';
   
   // Pass the effective theme ID to useTheme so it reacts to changes
   const { theme: loadedTheme, loading: themeLoading, error: themeError } = useTheme(effectiveThemeId);
@@ -195,6 +204,16 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     const fetchPublicData = async () => {
       try {
         setIsLoadingData(true);
+        
+        // CRITICAL: Fetch active theme from API first (database is source of truth)
+        const activeThemeResponse = await fetch('http://localhost:4000/api/v1/themes/active');
+        if (activeThemeResponse.ok) {
+          const activeThemeData = await activeThemeResponse.json();
+          if (activeThemeData?.id) {
+            setFetchedActiveThemeId(activeThemeData.id);
+          }
+        } else {
+        }
         
         // Fetch published pages
         const pagesResponse = await fetch('http://localhost:4000/api/v1/pages/published');
@@ -240,9 +259,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
         const productsResponse = await fetch('http://localhost:4000/api/v1/products?limit=100');
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
-          console.log('Products API response:', productsData);
           const products = Array.isArray(productsData) ? productsData : productsData.data || [];
-          console.log('Extracted products:', products);
           setPublicProducts(products);
         }
 
@@ -255,6 +272,8 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
             homepageId: settingsData.homepageId,
             postsPageId: settingsData.postsPageId,
             postsPerPage: settingsData.postsPerPage || 10,
+            siteName: settingsData.siteName || 'NestPress CMS',
+            siteDescription: settingsData.siteDescription || 'A Modern CMS',
           });
         }
 
@@ -290,10 +309,10 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
           const scripts = assets.filter((a: any) => a.type === 'script');
           setPluginAssets({ styles, scripts });
         } catch (error) {
-          console.error('Failed to load plugin assets:', error);
+          // Silent fail
         }
       } catch (error) {
-        console.error('Failed to fetch public data:', error);
+        // Silent fail
       } finally {
         setIsLoadingData(false);
       }
@@ -302,8 +321,8 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     fetchPublicData();
   }, []);
 
-  // Get current theme from context
-  const currentThemeId = themeId || activeThemeId;
+  // Get current theme from context (use effectiveThemeId which already handles all fallbacks)
+  const currentThemeId = effectiveThemeId;
   const theme = themes.find(t => t.id === currentThemeId) || themes[0];
 
   // Memoize available pages and posts to prevent infinite loops
@@ -353,6 +372,44 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     };
   }, []); // Empty deps - availablePages is captured in closure
 
+  // Generate WordPress CSS custom properties from theme.json
+  const generateThemeCSSVariables = (themeMetadata: any): string => {
+    if (!themeMetadata?.settings) return '';
+    
+    const cssVars: string[] = [];
+    const settings = themeMetadata.settings;
+    
+    // Color presets
+    if (settings.color?.palette) {
+      settings.color.palette.forEach((preset: any) => {
+        cssVars.push(`  --wp--preset--color--${preset.slug}: ${preset.color};`);
+      });
+    }
+    
+    // Spacing presets
+    if (settings.spacing?.spacingSizes) {
+      settings.spacing.spacingSizes.forEach((preset: any) => {
+        cssVars.push(`  --wp--preset--spacing--${preset.slug}: ${preset.size};`);
+      });
+    }
+    
+    // Font size presets
+    if (settings.typography?.fontSizes) {
+      settings.typography.fontSizes.forEach((preset: any) => {
+        cssVars.push(`  --wp--preset--font-size--${preset.slug}: ${preset.size};`);
+      });
+    }
+    
+    // Font family presets
+    if (settings.typography?.fontFamilies) {
+      settings.typography.fontFamilies.forEach((preset: any) => {
+        cssVars.push(`  --wp--preset--font-family--${preset.slug}: ${preset.fontFamily};`);
+      });
+    }
+    
+    return cssVars.length > 0 ? `:root {\n${cssVars.join('\n')}\n}` : '';
+  };
+
   // WordPress-like wp_head hook - inject assets and run head actions
   useEffect(() => {
     // Execute wp_head action (WordPress equivalent)
@@ -362,37 +419,70 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       route: window.location.pathname,
     });
 
-    // Load theme CSS files from theme.json assets
+    // Inject WordPress CSS from theme.json (WordPress generates CSS from theme.json)
+    let themeVarsStyle: HTMLStyleElement | null = null;
+    if (loadedTheme?.metadata) {
+      const themePath = `/themes/${effectiveThemeId}`;
+      const themeCSS = generateWordPressThemeCSS(loadedTheme.metadata, themePath);
+      if (themeCSS) {
+        themeVarsStyle = document.createElement('style');
+        themeVarsStyle.id = 'wp-theme-json-styles';
+        themeVarsStyle.textContent = themeCSS;
+        document.head.appendChild(themeVarsStyle);
+      }
+    }
+
+    // Load theme CSS files - prefer enqueueAssets() from functions.tsx, fallback to theme.json assets
     const styleElements: HTMLLinkElement[] = [];
-    console.log('[WebsiteFrontend] Theme CSS loading:', {
-      themeId: effectiveThemeId,
-      hasLoadedTheme: !!loadedTheme,
-      hasAssets: !!loadedTheme?.assets,
-      hasCss: !!loadedTheme?.assets?.css,
-      cssFiles: loadedTheme?.assets?.css
-    });
+    let cssFiles: string[] = [];
     
-    if (loadedTheme?.assets?.css) {
-      loadedTheme.assets.css.forEach((cssPath: string) => {
+    // Try to get CSS from WordPress functions.tsx enqueueAssets()
+    if (loadedTheme?.functions?.enqueueAssets) {
+      try {
+        const enqueuedAssets = loadedTheme.functions.enqueueAssets();
+        cssFiles = enqueuedAssets.styles.map(s => s.src);
+      } catch (error) {
+        cssFiles = loadedTheme?.assets?.css || [];
+      }
+    } else {
+      // Fallback to theme.json assets
+      cssFiles = loadedTheme?.assets?.css || [];
+    }
+    
+    if (cssFiles.length > 0) {
+      cssFiles.forEach((cssPath: string) => {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = `/themes/${effectiveThemeId}/${cssPath}`;
+        // Check if path already starts with /themes/ (from enqueueAssets)
+        // or is a relative path (from direct theme.json assets)
+        let href: string;
+        if (cssPath.startsWith('/themes/') || cssPath.startsWith('http')) {
+          // Already absolute path from enqueueAssets
+          href = cssPath;
+        } else {
+          // Relative path - prepend theme path
+          const cleanPath = cssPath.replace(/^\/+/, '');
+          href = `/themes/${effectiveThemeId}/${cleanPath}`;
+        }
+        link.href = href;
+        link.type = 'text/css';
         link.id = `theme-css-${cssPath.replace(/[^a-z0-9]/gi, '-')}`;
         document.head.appendChild(link);
         styleElements.push(link);
-        console.log(`✓ Loaded theme CSS: ${link.href}`);
       });
-    } else {
-      console.warn('[WebsiteFrontend] ⚠ No theme CSS files found in theme.json assets');
+    }
+    
+    // Apply custom block styles from theme functions
+    if (loadedTheme?.functions?.applyBlockStyles) {
+      try {
+        loadedTheme.functions.applyBlockStyles();
+      } catch (error) {
+        // Silent fail
+      }
     }
 
     // Load theme JS files from theme.json assets
     const themeScriptElements: HTMLScriptElement[] = [];
-    console.log('[WebsiteFrontend] Theme JS loading:', {
-      themeId: effectiveThemeId,
-      hasJs: !!loadedTheme?.assets?.js,
-      jsFiles: loadedTheme?.assets?.js
-    });
     
     if (loadedTheme?.assets?.js) {
       // Sort scripts to load libraries (jQuery, etc.) first
@@ -422,10 +512,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
         
         document.body.appendChild(script);
         themeScriptElements.push(script);
-        console.log(`✓ Loaded theme JS (${isLibrary ? 'sync' : 'defer'}): ${script.src}`);
       });
-    } else {
-      console.log('[WebsiteFrontend] ℹ No theme JS files found in theme.json assets');
     }
 
     // Load plugin styles in <head> (WordPress wp_enqueue_style)
@@ -456,11 +543,67 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
 
     // Cleanup on unmount or when assets change
     return () => {
+      if (themeVarsStyle) themeVarsStyle.remove();
       styleElements.forEach(el => el.remove());
       themeScriptElements.forEach(el => el.remove());
       scriptElements.forEach(el => el.remove());
     };
   }, [pluginAssets, effectiveThemeId, currentPage, loadedTheme]); // Removed doAction - it's stable
+
+  // CRITICAL: Disable Tailwind CSS and admin styles on public frontend
+  // These conflict with WordPress theme styles
+  useEffect(() => {
+    const removeTailwindAndAdminStyles = () => {
+      // Remove Tailwind CDN script
+      const tailwindScript = document.querySelector('script[src*="tailwindcss"]');
+      if (tailwindScript) {
+        tailwindScript.remove();
+      }
+      
+      // CRITICAL: Remove ALL Tailwind-generated styles from <head>
+      // Tailwind CDN injects a <style> element with all --tw-* variables
+      const allStyles = document.querySelectorAll('style');
+      allStyles.forEach((styleEl) => {
+        const content = styleEl.textContent || '';
+        // Check if this style contains Tailwind CSS (--tw- variables or tailwind markers)
+        if (content.includes('--tw-') || 
+            content.includes('tailwindcss') ||
+            content.includes('::backdrop') ||
+            content.includes('*,::before,::after') ||
+            (content.includes('border-width:0') && content.includes('border-style:solid'))) {
+          // Don't remove our own reset style
+          if (styleEl.id !== 'wp-theme-reset') {
+            styleEl.remove();
+          }
+        }
+      });
+      
+      // Remove index.html admin styles (font-family, background-color)
+      const indexStyles = document.querySelectorAll('head > style');
+      indexStyles.forEach((styleEl) => {
+        const content = styleEl.textContent || '';
+        if ((content.includes("font-family: 'Inter'") || 
+             content.includes('background-color: #f0f0f1') ||
+             content.includes('WP Admin Grey')) &&
+            styleEl.id !== 'wp-theme-reset') {
+          styleEl.remove();
+        }
+      });
+    };
+    
+    // Run immediately
+    removeTailwindAndAdminStyles();
+    
+    // Also run after a short delay (in case Tailwind regenerates)
+    const timeout = setTimeout(removeTailwindAndAdminStyles, 100);
+    
+    // WordPress Core CSS is loaded via wordpress-theme-css-generator.ts
+    // DO NOT inject layout CSS here - it belongs in Core CSS, not React components
+    
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
 
   // WordPress-like wp_footer hook - run footer actions before </body>
   useEffect(() => {
@@ -544,6 +687,12 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     sidebarWidgets: getWidgetsByArea('sidebar'),
     footerWidgets: getWidgetsByArea('footer'),
     headerWidgets: getWidgetsByArea('header'),
+    data: {
+      activeTheme: effectiveThemeId,
+      siteName: siteSettings.siteName || appearance.header?.siteName || 'NestPress CMS',
+      siteLogo: appearance.header?.siteLogo,
+      siteTagline: siteSettings.siteDescription || appearance.header?.tagline || '',
+    },
   };
 
   // ============================================
@@ -603,17 +752,72 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     if (siteSettings.homepageType === 'page' && siteSettings.homepageId) {
       // Static page as homepage
       const homePage = availablePages.find(p => p.id === siteSettings.homepageId);
-      templateName = 'page';
-      templateProps = { post: homePage, page: homePage, ...appearanceProps };
+      
+      if (homePage) {
+        templateName = 'page';
+        templateProps = { post: homePage, page: homePage, ...appearanceProps };
+      } else {
+        // Homepage not found - fallback to posts
+        templateName = loadedTheme.templates['front-page'] ? 'front-page' 
+                     : loadedTheme.templates['archive'] ? 'archive' 
+                     : 'index';
+        const postsLimit = siteSettings.postsPerPage || 10;
+        const limitedPosts = publishedPosts.slice(0, postsLimit);
+        templateProps = { posts: limitedPosts, allPosts: publishedPosts, ...appearanceProps };
+      }
     } else {
-      // Latest posts as homepage (default) - use archive template to show blog list
-      // Check for front-page template first, then archive, then index as fallback
-      templateName = loadedTheme.templates['front-page'] ? 'front-page' 
-                   : loadedTheme.templates['archive'] ? 'archive' 
-                   : 'index';
-      const postsLimit = siteSettings.postsPerPage || 10;
-      const limitedPosts = publishedPosts.slice(0, postsLimit);
-      templateProps = { posts: limitedPosts, allPosts: publishedPosts, ...appearanceProps };
+      // Latest posts as homepage (default)
+      // IMPORTANT: Twenty Twenty-Five's index/archive templates use pattern blocks
+      // which aren't implemented yet. Use 'page' template as fallback with posts list.
+      
+      // Check if we have any pages - use first page as homepage
+      const firstPage = availablePages[0];
+      
+      if (firstPage) {
+        templateName = 'page';
+        templateProps = { post: firstPage, page: firstPage, ...appearanceProps };
+      } else {
+        // No pages available - try front-page, archive, or page template (avoid index.html which uses patterns)
+        templateName = loadedTheme.templates['front-page'] ? 'front-page' 
+                     : loadedTheme.templates['archive'] ? 'archive'
+                     : loadedTheme.templates['page'] ? 'page'
+                     : 'index';
+        
+        const postsLimit = siteSettings.postsPerPage || 10;
+        const limitedPosts = publishedPosts.slice(0, postsLimit);
+        
+        // Create a dummy post for page template with proper WordPress block structure
+        const dummyHomePage = {
+          id: 'home',
+          title: 'Welcome',
+          content: `<!-- wp:group {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
+<div class="wp-block-group alignfull has-global-padding is-layout-constrained wp-block-group-is-layout-constrained" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
+  <!-- wp:post-title {"level":1} /-->
+  <!-- wp:post-content {"align":"full","layout":{"type":"constrained"}} -->
+  <div class="entry-content wp-block-post-content alignfull has-global-padding is-layout-constrained wp-block-post-content-is-layout-constrained">
+    <p>This is a temporary homepage. Go to Admin → Pages to create your homepage.</p>
+    ${limitedPosts.length > 0 ? `<h3>Latest Posts:</h3><ul>${limitedPosts.map(p => `<li><strong>${p.title}</strong> - ${p.excerpt || ''}</li>`).join('')}</ul>` : ''}
+  </div>
+  <!-- /wp:post-content -->
+</div>
+<!-- /wp:group -->`,
+          author: 'System',
+          status: 'published' as any,
+          categories: [],
+          tags: [],
+          date: new Date().toISOString(),
+          excerpt: '',
+          type: 'page',
+        };
+        
+        templateProps = { 
+          post: dummyHomePage, 
+          page: dummyHomePage,
+          posts: limitedPosts, 
+          allPosts: publishedPosts, 
+          ...appearanceProps 
+        };
+      }
     }
   } else if (route.match(/^\/blog\/[\w-]+$/)) {
     // Single post: /blog/post-slug or /blog/post-id

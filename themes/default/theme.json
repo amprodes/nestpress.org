@@ -95,7 +95,14 @@
           "slug": "80"
         }
       ],
-      "units": ["%", "px", "em", "rem", "vh", "vw"]
+      "units": [
+        "%",
+        "px",
+        "em",
+        "rem",
+        "vh",
+        "vw"
+      ]
     },
     "typography": {
       "writingMode": true,
@@ -186,17 +193,23 @@
     {
       "name": "page-with-sidebar",
       "title": "Page (With Sidebar)",
-      "postTypes": ["page"]
+      "postTypes": [
+        "page"
+      ]
     },
     {
       "name": "shop",
       "title": "Shop",
-      "postTypes": ["page"]
+      "postTypes": [
+        "page"
+      ]
     },
     {
       "name": "cart",
       "title": "Cart",
-      "postTypes": ["page"]
+      "postTypes": [
+        "page"
+      ]
     }
   ],
   "templateParts": [
@@ -237,8 +250,27 @@
     "WordPress-Compatible Structure",
     "Reusable Parts & Patterns"
   ],
+  "templates": [
+    "index",
+    "page",
+    "single",
+    "archive",
+    "search",
+    "404"
+  ],
+  "templateParts": [
+    {"name": "header", "title": "Header", "area": "header"},
+    {"name": "footer", "title": "Footer", "area": "footer"}
+  ],
   "requires": {
     "nestpress": ">=1.0.0",
     "react": ">=19.0.0"
+  },
+  "assets": {
+    "css": [
+      "style.css",
+      "assets/css/global-styles.css"
+    ],
+    "js": []
   }
 }

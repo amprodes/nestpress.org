@@ -3,6 +3,9 @@
  * Professional healthcare theme inspired by Pearl Medical
  */
 
+// Export WordPress-like theme functions
+export { themeSetup, blockStyles, patternCategories, enqueueAssets, blockBindings } from './functions';
+
 import React from 'react';
 import { Post, Menu, MenuItem, Widget, HeaderSettings } from '../../types';
 

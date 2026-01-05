@@ -6,6 +6,7 @@
 export * from './constants';
 export * from './security';
 export * from './validation';
+export * from './wordpress-theme-css-generator';
 
 // Re-export WordPress compatibility helpers from security.ts
 // These will eventually be moved to wp.ts

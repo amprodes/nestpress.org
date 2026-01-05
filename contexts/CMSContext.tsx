@@ -12,8 +12,10 @@ import {
   healthApi,
   menusApi,
   pluginsApi,
+  authApi,
   tokenManager 
 } from '../services/api';
+import { themeLoader } from '../utils/themeLoader';
 
 // API connection state
 type ApiStatus = 'connecting' | 'connected' | 'offline' | 'error';
@@ -248,7 +250,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const mapApiProductToProduct = (apiProduct: any): Product => {
-    console.log('Full API product object:', apiProduct);
     
     // Handle both lowercase and capitalized status values from backend
     const statusLower = apiProduct.status?.toLowerCase();
@@ -318,11 +319,9 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Fetch all data from API
   const fetchData = useCallback(async () => {
-    console.log('[CMSContext] Starting fetchData...');
     
     // Check if user is authenticated
     if (!tokenManager.isAuthenticated()) {
-      console.warn('[CMSContext] No auth token found');
       setApiStatus('offline');
       setIsLoading(false);
       setError('Not authenticated. Please log in.');
@@ -333,20 +332,16 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setError(null);
 
     try {
-      console.log('[CMSContext] Checking backend health...');
       // Check API health
       const isApiAvailable = await healthApi.checkApi();
       
       if (!isApiAvailable) {
-        console.error('[CMSContext] Backend health check failed!');
-        console.error('   Expected backend at: ' + (import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1'));
         setApiStatus('offline');
         setError('Backend API is not available. Please ensure the backend server is running on port 4000.');
         setIsLoading(false);
         return;
       }
 
-      console.log('[CMSContext] Backend is healthy, loading data...');
       setApiStatus('connected');
 
       // Load data from API in parallel
@@ -380,11 +375,9 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (postsResponse.status === 'fulfilled' && postsResponse.value?.data) {
         const mappedPosts = postsResponse.value.data.map(mapApiPostToPost);
         setPosts(mappedPosts);
-        console.log('✅ Loaded posts:', mappedPosts.length, 'Published:', mappedPosts.filter((p: Post) => p.status === 'published').length);
       } else {
         errors.push('Failed to load posts');
         if (postsResponse.status === 'rejected') {
-          console.error('Posts fetch error:', postsResponse.reason);
         }
       }
 
@@ -395,11 +388,9 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           return mapped;
         });
         setPages(mappedPages);
-        console.log('✅ Loaded pages:', mappedPages.length, 'Published:', mappedPages.filter((p: Post) => p.status === 'published').length);
       } else {
         errors.push('Failed to load pages');
         if (pagesResponse.status === 'rejected') {
-          console.error('Pages fetch error:', pagesResponse.reason);
         }
       }
 
@@ -408,7 +399,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         errors.push('Failed to load products');
         if (productsResponse.status === 'rejected') {
-          console.error('Products fetch error:', productsResponse.reason);
         }
       }
 
@@ -417,7 +407,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         errors.push('Failed to load orders');
         if (ordersResponse.status === 'rejected') {
-          console.error('Orders fetch error:', ordersResponse.reason);
         }
       }
 
@@ -430,7 +419,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         errors.push('Failed to load users');
         if (usersResponse.status === 'rejected') {
-          console.error('Users fetch error:', usersResponse.reason);
         }
       }
 
@@ -439,25 +427,26 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         errors.push('Failed to load comments');
         if (commentsResponse.status === 'rejected') {
-          console.error('Comments fetch error:', commentsResponse.reason);
         }
       }
 
       if (themesData.status === 'fulfilled' && Array.isArray(themesData.value)) {
         setThemes(themesData.value);
-        // Set active theme if not set
+        // Set active theme if not set - WordPress stores this in database wp_options
         if (themesData.value.length > 0 && !activeThemeId) {
-          // API returns isActive, not active
+          // API returns isActive from database
           const activeTheme = themesData.value.find((t: any) => t.isActive === true);
-          setActiveThemeId(activeTheme?.id || themesData.value[0].id);
-          console.log('Initial active theme:', activeTheme?.id || themesData.value[0].id);
+          const activeId = activeTheme?.id || themesData.value[0].id;
+          setActiveThemeId(activeId);
+          
+          // Sync theme loader singleton (memory only - database is source of truth)
+          themeLoader.setActiveTheme(activeId);
+          
         }
       } else if (themesData.status === 'fulfilled') {
         // themes data is not an array - likely an empty or malformed response
-        console.warn('Themes API returned non-array response:', themesData.value);
         // Don't add to errors - themes might just be loading differently
       } else {
-        console.error('Themes fetch error:', themesData.reason);
         // Don't block - themes will use defaults
       }
 
@@ -465,25 +454,20 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         // Merge with defaults to ensure all fields exist
         setSiteSettings({ ...defaultSiteSettings, ...settingsData.value });
       } else if (settingsData.status === 'fulfilled') {
-        console.warn('Settings API returned empty response, using defaults');
         // Keep default settings - already set in state
       } else {
-        console.error('Settings fetch error:', settingsData.reason);
         // Keep default settings - already set in state
       }
 
       if (menusData.status === 'fulfilled' && Array.isArray(menusData.value)) {
         setMenus(menusData.value);
       } else {
-        console.error('Menus fetch error:', menusData.status === 'rejected' ? menusData.reason : 'Unknown');
         setMenus([]);
       }
 
       if (pluginMenuData.status === 'fulfilled' && Array.isArray(pluginMenuData.value)) {
         setPluginMenuItems(pluginMenuData.value);
-        console.log('Loaded plugin menu items:', pluginMenuData.value);
       } else {
-        console.error('Plugin menu fetch error:', pluginMenuData.status === 'rejected' ? pluginMenuData.reason : 'Unknown');
         setPluginMenuItems([]);
       }
 
@@ -496,7 +480,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
 
     } catch (err) {
-      console.error('Failed to initialize CMS data:', err);
       setApiStatus('error');
       setError('Failed to connect to API. Please ensure the backend is running.');
     } finally {
@@ -509,14 +492,11 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const restoreSession = async () => {
       if (tokenManager.isAuthenticated()) {
         try {
-          const { authApi } = await import('../services/api');
           const user = await authApi.getProfile();
           if (user) {
             setCurrentUser(mapApiUserToUser(user));
-            console.log('Session restored for user:', user.email);
           }
         } catch (err) {
-          console.warn('Failed to restore session, token may be expired:', err);
           tokenManager.clearTokens();
         }
       }
@@ -531,13 +511,11 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     // Listen for login events to re-fetch data
     const handleAuthLogin = () => {
-      console.log('Auth login detected, re-fetching CMS data...');
       fetchData();
     };
     
     // Listen for logout events to clear data
     const handleAuthLogout = () => {
-      console.log('Auth logout detected, clearing CMS data...');
       setApiStatus('offline');
       setPosts([]);
       setPages([]);
@@ -581,11 +559,9 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ? await pagesApi.create(apiData)
         : await postsApi.create(apiData);
 
-      console.log('API response:', created);
 
       // Check if API response is valid
       if (!created || !created.id) {
-        console.error('Invalid API response:', created);
         throw new Error('API returned invalid response - missing id');
       }
 
@@ -593,25 +569,21 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const mappedPost = mapApiPostToPost(created);
       mappedPost.type = post.type; // Explicitly set type from input
       
-      console.log('Created post/page:', mappedPost.type, mappedPost.title, mappedPost.id);
       
       if (post.type === 'page') {
         setPages((prev) => {
           const updated = [mappedPost, ...prev];
-          console.log('Updated pages state, now has:', updated.length, 'pages');
           return updated;
         });
       } else {
         setPosts((prev) => {
           const updated = [mappedPost, ...prev];
-          console.log('Updated posts state, now has:', updated.length, 'posts');
           return updated;
         });
       }
 
       return mappedPost;
     } catch (err) {
-      console.error('Failed to create post:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -653,7 +625,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       return updatedPost; // Return the updated post
     } catch (err) {
-      console.error('Failed to update post:', err);
       throw err;
     }
   }, [apiStatus, posts, pages]);
@@ -675,7 +646,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosts((prev) => prev.filter((p) => p.id !== id));
       }
     } catch (err) {
-      console.error('Failed to delete post:', err);
       throw err;
     }
   }, [apiStatus, posts, pages]);
@@ -705,7 +675,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setProducts((prev) => [mappedProduct, ...prev]);
       return mappedProduct;
     } catch (err) {
-      console.error('Failed to create product:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -744,7 +713,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await productsApi.update(updated.id, apiData);
       setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
     } catch (err) {
-      console.error('Failed to update product:', err);
       throw err;
     }
   }, [apiStatus, products]);
@@ -758,7 +726,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await productsApi.delete(id);
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
-      console.error('Failed to delete product:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -787,11 +754,14 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     try {
-      // Activate theme - this now persists to database instead of localStorage
+      // Activate theme - persists to database (WordPress-style: wp_options 'template' and 'stylesheet')
       await themesApi.activate(themeId);
       
       // Update local state
       setActiveThemeId(themeId);
+      
+      // Update theme loader singleton (memory only - source of truth is database)
+      themeLoader.setActiveTheme(themeId);
       
       // Update themes list to reflect active state
       setThemes(prev => prev.map(t => ({
@@ -799,9 +769,7 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isActive: t.id === themeId
       })));
       
-      console.log('✓ Theme activated and persisted to database:', themeId);
     } catch (err) {
-      console.error('Failed to activate theme:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -815,7 +783,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await settingsApi.update(settings);
       setSiteSettings(prev => prev ? { ...prev, ...settings } : settings as SiteSettings);
     } catch (err) {
-      console.error('Failed to update settings:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -835,7 +802,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       setMenus(prev => [...prev, created]);
     } catch (err) {
-      console.error('Failed to create menu:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -854,7 +820,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       });
       setMenus(prev => prev.map(m => m.id === menu.id ? updated : m));
     } catch (err) {
-      console.error('Failed to update menu:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -868,7 +833,6 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await menusApi.delete(id);
       setMenus(prev => prev.filter(m => m.id !== id));
     } catch (err) {
-      console.error('Failed to delete menu:', err);
       throw err;
     }
   }, [apiStatus]);
@@ -887,9 +851,7 @@ export const CMSProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const menuItems = await pluginsApi.getAdminSubMenuItems('appearance');
       setPluginMenuItems(menuItems);
-      console.log('[CMSContext] Refreshed plugin menu items:', menuItems);
     } catch (err) {
-      console.error('[CMSContext] Failed to refresh plugin menu items:', err);
       setPluginMenuItems([]);
     }
   }, []);

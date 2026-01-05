@@ -3,6 +3,9 @@
  * Modern SaaS and product landing page theme
  */
 
+// Export WordPress-like theme functions (from functions.ts)
+export { themeSetup, blockStyles, patternCategories, enqueueAssets, blockBindings } from './functions';
+
 import React from 'react';
 import { Menu, X, Share2, Github, Linkedin, PlayCircle, ArrowRight, ChevronRight, Mail, MapPin, Phone } from 'lucide-react';
 import { Post, Menu as MenuType, MenuItem, Widget, HeaderSettings } from '../../types';

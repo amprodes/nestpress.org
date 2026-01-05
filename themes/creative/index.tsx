@@ -3,6 +3,9 @@
  * Bold, artistic theme for creative agencies and design studios
  */
 
+// Export WordPress-like theme functions
+export { themeSetup, blockStyles, patternCategories, enqueueAssets, blockBindings } from './functions';
+
 import React from 'react';
 import { Menu, X, Instagram, Linkedin, ArrowRight, Mail, Phone, MapPin, Globe, Share2 } from 'lucide-react';
 import { Post, Menu as MenuType, MenuItem, Widget, HeaderSettings } from '../../types';
