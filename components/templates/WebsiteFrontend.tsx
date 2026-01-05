@@ -179,6 +179,7 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
   const [publicPosts, setPublicPosts] = useState<Post[]>([]);
   const [publicProducts, setPublicProducts] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isCSSLoaded, setIsCSSLoaded] = useState(false);
   const [pluginAssets, setPluginAssets] = useState<{ styles: any[]; scripts: any[] }>({ styles: [], scripts: [] });
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     homepageType: 'posts',
@@ -412,6 +413,9 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
 
   // WordPress-like wp_head hook - inject assets and run head actions
   useEffect(() => {
+    // Reset CSS loaded state when theme changes
+    setIsCSSLoaded(false);
+    
     // Execute wp_head action (WordPress equivalent)
     doAction('wp_head', {
       theme: effectiveThemeId,
@@ -449,6 +453,15 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
       cssFiles = loadedTheme?.assets?.css || [];
     }
     
+    // CRITICAL: Wait for all CSS to load before rendering content (prevent FOUC)
+    let cssLoadedCount = 0;
+    const totalCSSFiles = cssFiles.length;
+    
+    if (totalCSSFiles === 0) {
+      // No CSS files to load, mark as ready
+      setIsCSSLoaded(true);
+    }
+    
     if (cssFiles.length > 0) {
       cssFiles.forEach((cssPath: string) => {
         const link = document.createElement('link');
@@ -467,6 +480,23 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
         link.href = href;
         link.type = 'text/css';
         link.id = `theme-css-${cssPath.replace(/[^a-z0-9]/gi, '-')}`;
+        
+        // Wait for CSS to load before showing content
+        link.onload = () => {
+          cssLoadedCount++;
+          if (cssLoadedCount === totalCSSFiles) {
+            setIsCSSLoaded(true);
+          }
+        };
+        
+        link.onerror = () => {
+          // Even on error, count it to prevent hanging
+          cssLoadedCount++;
+          if (cssLoadedCount === totalCSSFiles) {
+            setIsCSSLoaded(true);
+          }
+        };
+        
         document.head.appendChild(link);
         styleElements.push(link);
       });
@@ -646,8 +676,8 @@ const WebsiteFrontend: React.FC<WebsiteFrontendProps> = ({
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Show loading while fetching theme or initial data
-  if (themeLoading || isLoadingData) {
+  // Show loading while fetching theme or initial data OR waiting for CSS to load
+  if (themeLoading || isLoadingData || !isCSSLoaded) {
     return (
       <div style={{ 
         minHeight: '100vh', 
